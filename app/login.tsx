@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
-  Alert,
-  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { signin } from '../services/authService';
@@ -36,9 +36,9 @@ export default function LoginScreen() {
 
       // Navigate based on role
       if (selectedRole === 'customer') {
-        router.replace('/customerOrderScreen' as any);
+        router.replace('/customer-home' as any);
       } else {
-        router.replace('/washerJobBoardScreen' as any);
+        router.replace('/washer-home' as any);
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);
@@ -50,8 +50,7 @@ export default function LoginScreen() {
   return (
     <>
       <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={['#2563eb', '#1d4ed8', '#1e3a8a']}
+      <View
         style={styles.container}
       >
         <ScrollView
@@ -223,7 +222,7 @@ export default function LoginScreen() {
             </Text>
           </View>
         </ScrollView>
-      </LinearGradient>
+      </View>
     </>
   );
 }
@@ -231,6 +230,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0d1629',
   },
   scrollContent: {
     paddingBottom: 40,

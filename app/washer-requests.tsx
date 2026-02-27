@@ -1,17 +1,17 @@
+import { apiFetch } from '@/services/apiClient';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    FlatList,
-    TouchableOpacity,
     ActivityIndicator,
-    RefreshControl,
     Alert,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface JobRequest {
     id: string;
@@ -74,16 +74,7 @@ export default function WasherRequestsScreen() {
         try {
             if (!silent) setLoading(true);
 
-            const token = await AsyncStorage.getItem('idToken');
-            const response = await fetch(
-                'http://172.20.10.4:8859/api/provider/bookings?status=pending',
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const data = await apiFetch('/bookings?status=pending', {}, 'provider');
 
             if (data.success) {
                 setRequests(data.data.bookings);
@@ -107,19 +98,7 @@ export default function WasherRequestsScreen() {
     const handleAcceptJob = async (requestId: string) => {
         try {
             setAcceptingId(requestId);
-            const token = await AsyncStorage.getItem('idToken');
-
-            const response = await fetch(
-                `http://172.20.10.4:8859/api/provider/bookings/${requestId}/accept`,
-                {
-                    method: 'PATCH',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            const data = await response.json();
+            const data = await apiFetch(`/bookings/${requestId}/accept`, { method: 'PATCH' }, 'provider');
 
             if (data.success) {
                 Alert.alert(
@@ -162,23 +141,12 @@ export default function WasherRequestsScreen() {
                     onPress: async () => {
                         try {
                             setDecliningId(requestId);
-                            const token = await AsyncStorage.getItem('idToken');
-
-                            const response = await fetch(
-                                `http://172.20.10.4:8859/api/provider/bookings/${requestId}/reject`,
-                                {
-                                    method: 'PATCH',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                    body: JSON.stringify({
-                                        reason: 'Not available at this time',
-                                    }),
-                                }
-                            );
-
-                            const data = await response.json();
+                            const data = await apiFetch(`/bookings/${requestId}/reject`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({
+                                    reason: 'Not available at this time',
+                                }),
+                            }, 'provider');
 
                             if (data.success) {
                                 Alert.alert('Declined', 'Job request declined successfully.');

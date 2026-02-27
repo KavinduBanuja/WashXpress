@@ -1,14 +1,11 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// @ts-ignore
-import { getReactNativePersistence, initializeAuth } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getApp, getApps, initializeApp } from "firebase/app";
+// @ts-ignore
+import { Auth, getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -19,10 +16,19 @@ const firebaseConfig = {
 };
 console.log("🔍 Initializing Firebase with project:", firebaseConfig.projectId);
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+// Initialize Firebase (prevent re-initialization on hot reload)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+let auth: Auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch (e: any) {
+  // If auth was already initialized (hot reload), just get the existing instance
+  auth = getAuth(app);
+}
+
+export { auth };
 export const db = getFirestore(app);
 console.log("✅ Firebase initialized");

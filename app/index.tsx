@@ -1,9 +1,9 @@
 import { Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { auth } from '../firebaseConfig';
 import { User, onAuthStateChanged } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { auth } from '../firebaseConfig';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +73,7 @@ export default function Index() {
   }
 
   if (isAuthenticated && userType === 'provider') {
-    return <Redirect href="/provider-home" />;
+    return <Redirect href="/washer-home" />;
   }
 
   return <Redirect href="/login" />;

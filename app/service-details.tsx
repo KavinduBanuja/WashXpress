@@ -1,16 +1,16 @@
+import { apiFetch } from '@/services/apiClient';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
     ActivityIndicator,
-    Image,
     Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 interface Service {
     id: string;
@@ -53,10 +53,7 @@ export default function ServiceDetailsScreen() {
     const loadServiceDetails = async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                `http://172.20.10.4:8859/api/customer/services/${serviceId}`
-            );
-            const data = await response.json();
+            const data = await apiFetch(`/services/${serviceId}`, { requiresAuth: false }, 'customer');
 
             if (data.success) {
                 setService(data.data.service);

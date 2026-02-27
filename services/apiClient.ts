@@ -1,5 +1,5 @@
-import * as SecureStore from "expo-secure-store";
 import { auth } from "@/firebaseConfig";
+import * as SecureStore from "expo-secure-store";
 
 
 
@@ -64,10 +64,6 @@ export async function apiFetch<T = any>(
       ? process.env.EXPO_PUBLIC_PROVIDER_API_URL
       : process.env.EXPO_PUBLIC_CUSTOMER_API_URL;
 
-       console.log('🔍 Base URL:', baseURL);  // ✅ Add this
-       console.log('🔍 Endpoint:', endpoint);  // ✅ Add this
-       console.log('🔍 Full URL:', `${baseURL}${endpoint}`);  // ✅ Add this
-
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(fetchOptions.headers as Record<string, string>),
@@ -77,19 +73,44 @@ export async function apiFetch<T = any>(
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${baseURL}${endpoint}`, {
-      ...fetchOptions,
-      headers,
-    });
+    console.log(`🚀 API Request [${endpoint}]`);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'API request failed');
+    // Add timeout to fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+    try {
+      const response = await fetch(`${baseURL}${endpoint}`, {
+        ...fetchOptions,
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'API request failed';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      console.log(`✅ API Success [${endpoint}]`);
+      return await response.json();
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please check your connection and server IP.');
+      }
+      throw error;
     }
-
-    return await response.json();
   } catch (error) {
-    console.error('API request error:', error);
+    console.error(`❌ API Error [${endpoint}]:`, error);
     throw error;
   }
 }

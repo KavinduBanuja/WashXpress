@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import { apiFetch } from '@/services/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface User {
   uid: string;
@@ -79,8 +82,8 @@ export default function CustomerHomeScreen() {
     try {
       setLoading(true);
 
-      // Load user from storage
-      const userData = await AsyncStorage.getItem('user');
+      // Load user from storage (AuthService saves under 'customer' or 'provider')
+      const userData = await SecureStore.getItemAsync('customer');
       if (userData) {
         setUser(JSON.parse(userData));
       }
@@ -92,8 +95,9 @@ export default function CustomerHomeScreen() {
         loadVehicles(),
         loadActiveBookings(),
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load data error:', error);
+      Alert.alert('Error', error.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -101,8 +105,7 @@ export default function CustomerHomeScreen() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('http://172.20.10.4:8859/api/customer/services/categories');
-      const data = await response.json();
+      const data = await apiFetch('/services/categories', { requiresAuth: false }, 'customer');
 
       if (data.success) {
         setCategories(data.data.categories.slice(0, 6)); // Show first 6
@@ -114,8 +117,7 @@ export default function CustomerHomeScreen() {
 
   const loadFeaturedServices = async () => {
     try {
-      const response = await fetch('http://172.20.10.4:8859/api/customer/services?limit=5&sortBy=rating&sortOrder=desc');
-      const data = await response.json();
+      const data = await apiFetch('/services?limit=5&sortBy=rating&sortOrder=desc', { requiresAuth: false }, 'customer');
 
       if (data.success) {
         setServices(data.data.services);
@@ -127,13 +129,7 @@ export default function CustomerHomeScreen() {
 
   const loadVehicles = async () => {
     try {
-      const token = await AsyncStorage.getItem('idToken');
-      const response = await fetch('http://172.20.10.4:8859/api/customer/vehicles', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await apiFetch('/vehicles', {}, 'customer');
 
       if (data.success) {
         setVehicles(data.data.vehicles);
@@ -145,13 +141,7 @@ export default function CustomerHomeScreen() {
 
   const loadActiveBookings = async () => {
     try {
-      const token = await AsyncStorage.getItem('idToken');
-      const response = await fetch('http://172.20.10.4:8859/api/customer/bookings?status=confirmed&limit=3', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await apiFetch('/bookings?status=confirmed&limit=3', {}, 'customer');
 
       if (data.success) {
         setActiveBookings(data.data.bookings);

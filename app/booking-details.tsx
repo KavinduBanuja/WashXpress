@@ -1,20 +1,20 @@
+import { apiFetch } from '@/services/apiClient';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
     ActivityIndicator,
-    RefreshControl,
     Alert,
-    Linking,
     Animated,
     Image,
+    Linking,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Booking {
     id: string;
@@ -137,17 +137,7 @@ export default function BookingDetailsScreen() {
     const loadBookingDetails = async (silent = false) => {
         try {
             if (!silent) setLoading(true);
-            const token = await AsyncStorage.getItem('idToken');
-
-            const response = await fetch(
-                `http://172.20.10.4:8859/api/customer/bookings/${bookingId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const data = await apiFetch(`/bookings/${bookingId}`, {}, 'customer');
 
             if (data.success) {
                 setBooking(data.data.booking);
@@ -183,23 +173,12 @@ export default function BookingDetailsScreen() {
                     onPress: async () => {
                         try {
                             setCancelling(true);
-                            const token = await AsyncStorage.getItem('idToken');
-
-                            const response = await fetch(
-                                `http://172.20.10.4:8859/api/customer/bookings/${bookingId}/cancel`,
-                                {
-                                    method: 'PATCH',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                    body: JSON.stringify({
-                                        reason: 'Cancelled by customer',
-                                    }),
-                                }
-                            );
-
-                            const data = await response.json();
+                            const data = await apiFetch(`/bookings/${bookingId}/cancel`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({
+                                    reason: 'Cancelled by customer',
+                                }),
+                            }, 'customer');
 
                             if (data.success) {
                                 Alert.alert('Cancelled', 'Your booking has been cancelled successfully.');

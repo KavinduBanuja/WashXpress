@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    RefreshControl,
-    ActivityIndicator,
-    Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import { apiFetch } from '@/services/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Image,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 interface WasherProfile {
     uid: string;
@@ -100,8 +101,9 @@ export default function WasherHomeScreen() {
                 loadPendingRequests(),
                 loadStats(),
             ]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Load dashboard error:', error);
+            Alert.alert('Connection Error', 'Failed to load dashboard data. Please check if the server is running and the IP address in .env is correct.');
         } finally {
             setLoading(false);
         }
@@ -109,13 +111,7 @@ export default function WasherHomeScreen() {
 
     const loadProfile = async () => {
         try {
-            const token = await AsyncStorage.getItem('idToken');
-            const response = await fetch('http://172.20.10.4:8859/api/provider/profile', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            const data = await response.json();
+            const data = await apiFetch('/profile', {}, 'provider');
 
             if (data.success) {
                 setProfile(data.data.provider);
@@ -127,16 +123,7 @@ export default function WasherHomeScreen() {
 
     const loadCurrentJob = async () => {
         try {
-            const token = await AsyncStorage.getItem('idToken');
-            const response = await fetch(
-                'http://172.20.10.4:8859/api/provider/bookings?status=in_progress&limit=1',
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const data = await apiFetch('/bookings?status=in_progress&limit=1', {}, 'provider');
 
             if (data.success && data.data.bookings.length > 0) {
                 setCurrentJob(data.data.bookings[0]);
@@ -150,17 +137,8 @@ export default function WasherHomeScreen() {
 
     const loadNextBooking = async () => {
         try {
-            const token = await AsyncStorage.getItem('idToken');
             const today = new Date().toISOString().split('T')[0];
-            const response = await fetch(
-                `http://172.20.10.4:8859/api/provider/bookings?status=confirmed&startDate=${today}&limit=1`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const data = await apiFetch(`/bookings?status=confirmed&startDate=${today}&limit=1`, {}, 'provider');
 
             if (data.success && data.data.bookings.length > 0) {
                 setNextBooking(data.data.bookings[0]);
@@ -174,19 +152,10 @@ export default function WasherHomeScreen() {
 
     const loadPendingRequests = async (silent = false) => {
         try {
-            const token = await AsyncStorage.getItem('idToken');
-            const response = await fetch(
-                'http://172.20.10.4:8859/api/provider/bookings?status=pending&limit=10',
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const data = await apiFetch('/bookings?status=pending&limit=10', {}, 'provider');
 
             if (data.success) {
-                setPendingRequests(data.data.bookings);
+                setRequests(data.data.bookings);
                 setStats(prev => ({ ...prev, pendingRequests: data.data.bookings.length }));
 
                 // Show notification if new requests (only if silent update)
@@ -205,15 +174,7 @@ export default function WasherHomeScreen() {
             const today = new Date().toISOString().split('T')[0];
 
             // Get today's completed bookings
-            const todayResponse = await fetch(
-                `http://172.20.10.4:8859/api/provider/bookings?status=completed&startDate=${today}&endDate=${today}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const todayData = await todayResponse.json();
+            const todayData = await apiFetch(`/bookings?status=completed&startDate=${today}&endDate=${today}`, {}, 'provider');
 
             if (todayData.success) {
                 const completedToday = todayData.data.bookings.length;

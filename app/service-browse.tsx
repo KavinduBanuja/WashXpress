@@ -1,18 +1,19 @@
+import { apiFetch } from '@/services/apiClient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   Alert,
   Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 
 interface Category {
   id: string;
@@ -102,8 +103,7 @@ export default function ServiceBrowseScreen() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('http://172.20.10.4:8859/api/customer/services/categories');
-      const data = await response.json();
+      const data = await apiFetch('/services/categories', { requiresAuth: false }, 'customer');
 
       if (data.success) {
         setCategories(data.data.categories);
@@ -115,8 +115,7 @@ export default function ServiceBrowseScreen() {
 
   const loadServices = async () => {
     try {
-      const response = await fetch('http://172.20.10.4:8859/api/customer/services?limit=50');
-      const data = await response.json();
+      const data = await apiFetch('/services?limit=50', { requiresAuth: false }, 'customer');
 
       if (data.success) {
         setServices(data.data.services);
@@ -163,10 +162,7 @@ export default function ServiceBrowseScreen() {
         params.append('category', selectedCategory);
       }
 
-      const response = await fetch(
-        `http://172.20.10.4:8859/api/customer/services/search?${params.toString()}`
-      );
-      const data = await response.json();
+      const data = await apiFetch(`/services/search?${params.toString()}`, { requiresAuth: false }, 'customer');
 
       if (data.success) {
         setServices(data.data.services);

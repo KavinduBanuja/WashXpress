@@ -13,7 +13,7 @@ service cloud.firestore {
     }
     
     // Allow anyone authenticated to read services
-    match /Service/{document=**} {
+    match /services/{document=**} {
       allow read: if request.auth != null;
     }
     
