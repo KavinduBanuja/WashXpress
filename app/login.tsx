@@ -14,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { signin } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
+import SubscriptionAgreementModal from '../components/SubscriptionAgreementModal';
 
 export default function LoginScreen() {
   const [selectedRole, setSelectedRole] = useState<'customer' | 'provider'>('customer');
@@ -21,6 +23,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showAgreement, setShowAgreement] = useState(false);
+  const { setAuth, logout } = useAuth(); // Global auth context
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -32,14 +36,15 @@ export default function LoginScreen() {
     try {
       console.log(`🔐 Logging in as ${selectedRole}...`);
       const result = await signin(email, password, selectedRole);
+
+      // ✅ Update global auth state directly
+      if (result.token) {
+        await setAuth(result.token, selectedRole, result.user);
+      }
       console.log('✅ Login successful:', result);
 
-      // Navigate based on role
-      if (selectedRole === 'customer') {
-        router.replace('/customer-home' as any);
-      } else {
-        router.replace('/washer-home' as any);
-      }
+      // Show agreement modal instead of navigating immediately
+      setShowAgreement(true);
     } catch (error: any) {
       console.error('❌ Login error:', error);
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
@@ -47,6 +52,26 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
+  const handleAgreeAndContinue = () => {
+    setShowAgreement(false);
+    // Navigate based on role
+    if (selectedRole === 'customer') {
+      router.replace('/customer-home' as any);
+    } else {
+      router.replace('/washer-home' as any);
+    }
+  };
+
+  const handleCancelAgreement = async () => {
+    setShowAgreement(false);
+    try {
+      await logout(); // Sign out since they didn't agree
+    } catch (e) {
+      console.error('Logout failed', e);
+    }
+  };
+
   return (
     <>
       <StatusBar barStyle="light-content" />
@@ -223,6 +248,12 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </View>
+
+      <SubscriptionAgreementModal
+        visible={showAgreement}
+        onAgree={handleAgreeAndContinue}
+        onCancel={handleCancelAgreement}
+      />
     </>
   );
 }
