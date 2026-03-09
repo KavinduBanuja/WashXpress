@@ -3,22 +3,28 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { auth } from '../firebaseConfig';
-import { Href, Redirect } from 'expo-router';
+import { Redirect } from 'expo-router';
+import { apiFetch } from '../services/apiClient';
+
+type Destination =
+  | '/login'
+  | '/customer-home'
+  | '/washer-home'
+  | '/washer-pending';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState<'customer' | 'provider' | null>(null);
+  const [destination, setDestination] = useState<Destination | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("🔍 Checking auth state...");
+        console.log('🔍 Checking auth state...');
 
-        // Wait for Firebase Auth to initialize with a timeout
+        // Wait for Firebase Auth to initialize
         const user = await new Promise<User | null>((resolve) => {
           const timeout = setTimeout(() => {
-            console.warn("⏳ Auth check timed out after 5s");
+            console.warn('⏳ Auth check timed out after 5s');
             resolve(null);
           }, 5000);
 
@@ -29,29 +35,52 @@ export default function Index() {
           });
         });
 
-        if (user) {
-          console.log("✅ Firebase user found:", user.email);
-          const type = await SecureStore.getItemAsync('userType');
-
-          if (type) {
-            setIsAuthenticated(true);
-            setUserType(type as 'customer' | 'provider');
-          } else {
-            console.log("⚠️ No userType found in storage despite valid Firebase user");
-            setIsAuthenticated(false);
-          }
-        } else {
-          console.log("❌ No Firebase user found");
-          // clear any stale storage data
+        if (!user) {
+          console.log('❌ No Firebase user found');
           await Promise.all([
             SecureStore.deleteItemAsync('accessToken'),
-            SecureStore.deleteItemAsync('userType')
+            SecureStore.deleteItemAsync('userType'),
           ]);
-          setIsAuthenticated(false);
+          setDestination('/login');
+          return;
         }
+
+        console.log('✅ Firebase user found:', user.email);
+        const userType = await SecureStore.getItemAsync('userType');
+
+        if (!userType) {
+          console.log('⚠️ No userType in storage');
+          setDestination('/login');
+          return;
+        }
+
+        if (userType === 'customer') {
+          setDestination('/customer-home');
+          return;
+        }
+
+        if (userType === 'provider') {
+          // Check if washer is verified before routing to home
+          try {
+            const data = await apiFetch('/auth/washer/profile', {}, 'provider');
+            if (data.success && data.provider?.isVerified) {
+              setDestination('/washer-home');
+            } else {
+              setDestination('/washer-pending');
+            }
+          } catch (profileError) {
+            console.warn('⚠️ Could not fetch washer profile, routing to pending:', profileError);
+            // Default to pending on error — safer than sending unverified washer to home
+            setDestination('/washer-pending');
+          }
+          return;
+        }
+
+        // Unknown userType
+        setDestination('/login');
       } catch (error) {
         console.error('Auth check error:', error);
-        setIsAuthenticated(false);
+        setDestination('/login');
       } finally {
         setIsLoading(false);
       }
@@ -60,7 +89,7 @@ export default function Index() {
     checkAuth();
   }, []);
 
-  if (isLoading) {
+  if (isLoading || !destination) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#2563eb" />
@@ -68,13 +97,6 @@ export default function Index() {
     );
   }
 
-  if (isAuthenticated && userType === 'customer') {
-    return <Redirect href="/customer-home" />;
-  }
-
-  if (isAuthenticated && userType === 'provider') {
-    return <Redirect href="/washer-home" />;
-  }
-
-  return <Redirect href="/login" />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <Redirect href={destination as any} />;
 }

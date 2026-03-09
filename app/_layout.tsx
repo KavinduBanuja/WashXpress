@@ -12,10 +12,12 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="login" />
           <Stack.Screen name="signup" />
+          <Stack.Screen name="washer-signup" />
           <Stack.Screen name="home" />
           <Stack.Screen name="customer-home" />
           <Stack.Screen name="provider-home" />
           <Stack.Screen name="washer-home" />
+          <Stack.Screen name="washer-pending" />
           <Stack.Screen name="washer-job-request" />
           <Stack.Screen name="washer-requests" />
           <Stack.Screen name="service-browse" />

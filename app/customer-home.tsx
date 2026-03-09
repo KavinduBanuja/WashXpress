@@ -68,7 +68,6 @@ export default function CustomerHomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [activeBookings, setActiveBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +90,6 @@ export default function CustomerHomeScreen() {
       // Load all data in parallel
       await Promise.all([
         loadCategories(),
-        loadFeaturedServices(),
         loadVehicles(),
         loadActiveBookings(),
       ]);
@@ -115,17 +113,6 @@ export default function CustomerHomeScreen() {
     }
   };
 
-  const loadFeaturedServices = async () => {
-    try {
-      const data = await apiFetch('/services?limit=5&sortBy=rating&sortOrder=desc', { requiresAuth: false }, 'customer');
-
-      if (data.success) {
-        setServices(data.data.services);
-      }
-    } catch (error) {
-      console.error('Load services error:', error);
-    }
-  };
 
   const loadVehicles = async () => {
     try {
@@ -352,39 +339,6 @@ export default function CustomerHomeScreen() {
         </View>
       </View>
 
-      {/* Top Rated Services */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Rated Services</Text>
-          <TouchableOpacity onPress={() => router.push('/service-browse' as Href)}>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {services.map((service) => (
-          <TouchableOpacity
-            key={service.id}
-            style={styles.serviceCard}
-            onPress={() => router.push(`/service-details?id=${service.id}` as Href)}
-          >
-            <View style={styles.serviceInfo}>
-              <Text style={styles.serviceName}>{service.name}</Text>
-              <Text style={styles.serviceProvider}>
-                {service.provider.displayName} • {service.provider.area}
-              </Text>
-              <View style={styles.serviceRating}>
-                <Ionicons name="star" size={16} color="#FFD700" />
-                <Text style={styles.ratingText}>{service.provider.rating}</Text>
-              </View>
-            </View>
-            <View style={styles.servicePrice}>
-              <Text style={styles.priceAmount}>
-                {service.currency} {service.price.toLocaleString()}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
 
       {/* Logout Button (for testing) */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -583,46 +537,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  serviceCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  serviceInfo: {
-    flex: 1,
-  },
-  serviceName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
-  serviceProvider: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  serviceRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  ratingText: {
-    fontSize: 14,
-    color: '#000',
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  servicePrice: {
-    justifyContent: 'center',
-  },
-  priceAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
+
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
