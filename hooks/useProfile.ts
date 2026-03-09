@@ -1,18 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { CustomerProfile, getProfile, updateProfile } from '../services/authService';
+import { auth } from '../firebaseConfig';
+import { CustomerProfile, getProfileFromFirebase, updateProfile } from '../services/authService';
 
 export function useProfile() {
-    const { token, isLoading: authLoading } = useAuth();
+    const { token, userType, isLoading: authLoading } = useAuth();
+    const currentUser = auth.currentUser;
 
-    return useQuery<CustomerProfile, Error>({
-        queryKey: ['profile'],
+    return useQuery<CustomerProfile | null, Error>({
+        queryKey: ['profile', currentUser?.uid],
         queryFn: async () => {
-            const data = await getProfile();
-            return data;
+            if (!currentUser?.uid || !userType) return null;
+            return await getProfileFromFirebase(currentUser.uid, userType);
         },
         // Only run the query if we have a token, and auth has finished loading
-        enabled: !!token && !authLoading,
+        enabled: !!token && !authLoading && !!currentUser?.uid,
     });
 }
 

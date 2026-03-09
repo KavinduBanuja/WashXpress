@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { signInWithCustomToken } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
 import { apiFetch } from "./apiClient";
 
 export async function getToken() {
@@ -125,6 +126,9 @@ export interface CustomerProfile {
   };
   area?: string;
   rating?: number;
+  serviceAreas?: string[];
+  washerStatus?: string;
+  certificationStatus?: string;
 }
 
 export async function getProfile() {
@@ -136,6 +140,31 @@ export async function updateProfile(data: Partial<CustomerProfile>) {
     method: "PATCH",
     body: JSON.stringify(data),
   });
+}
+
+export async function getProfileFromFirebase(uid: string, userType: 'customer' | 'provider'): Promise<CustomerProfile | null> {
+  try {
+    const collectionName = userType === 'customer' ? 'customers' : 'providers';
+    const docRef = doc(db, collectionName, uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Safeguard: Confirm UID match
+      // Firestore document ID is the UID, but we also check the internal field if it exists
+      if (data.uid && data.uid !== uid) {
+        throw new Error("Security verification failed: UID mismatch");
+      }
+      return {
+        uid: docSnap.id,
+        ...data,
+      } as CustomerProfile;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching profile from Firebase:", error);
+    throw error;
+  }
 }
 
 export async function signOut() {

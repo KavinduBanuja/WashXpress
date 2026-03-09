@@ -12,6 +12,7 @@ import {
   View
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { auth } from '../firebaseConfig';
 import { useProfile } from '../hooks/useProfile';
 
 export default function ProfileScreen() {
@@ -62,13 +63,30 @@ export default function ProfileScreen() {
     );
   }
 
-  if (error) {
+  // UID Validation safeguard
+  const currentUser = auth.currentUser;
+  const isUidValid = profile && currentUser && profile.uid === currentUser.uid;
+
+  if (error || (profile === null && !isLoading)) {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle" size={48} color="#FF3B30" />
-        <Text style={styles.errorText}>Failed to load profile details.</Text>
+        <Text style={styles.errorText}>Unable to load profile data. Please refresh or check your connection.</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
           <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!isUidValid && profile) {
+    console.error("❌ UID mismatch detected!");
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="shield-checkmark" size={48} color="#FF3B30" />
+        <Text style={styles.errorText}>Security validation failed. Please log in again.</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={handleSignOut}>
+          <Text style={styles.retryButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
     );
