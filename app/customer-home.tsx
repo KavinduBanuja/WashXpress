@@ -1,7 +1,7 @@
 import { apiFetch } from '@/services/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import {
@@ -159,7 +159,7 @@ export default function CustomerHomeScreen() {
 
   const handleLogout = async () => {
     await AsyncStorage.multiRemove(['customToken', 'idToken', 'user']);
-    router.replace('/login');
+    router.replace('/login' as Href);
   };
 
   const getCategoryIcon = (iconName: string) => {
@@ -206,7 +206,7 @@ export default function CustomerHomeScreen() {
           <Text style={styles.greeting}>Hello,</Text>
           <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/profile')}>
+        <TouchableOpacity onPress={() => router.push('/profile' as Href)}>
           <View style={styles.profilePic}>
             {user?.photoURL ? (
               <Image source={{ uri: user.photoURL }} style={styles.profileImage} />
@@ -221,7 +221,7 @@ export default function CustomerHomeScreen() {
       <View style={styles.quickActions}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push('/service-browse')}
+          onPress={() => router.push('/service-browse' as Href)}
         >
           <Ionicons name="search" size={24} color="#007AFF" />
           <Text style={styles.actionText}>Find Service</Text>
@@ -229,7 +229,7 @@ export default function CustomerHomeScreen() {
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push('/vehicle-list')}
+          onPress={() => router.push('/vehicle-list' as Href)}
         >
           <Ionicons name="car-sport" size={24} color="#007AFF" />
           <Text style={styles.actionText}>My Fleet</Text>
@@ -237,7 +237,7 @@ export default function CustomerHomeScreen() {
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push('/booking-list')}
+          onPress={() => router.push('/booking-list' as Href)}
         >
           <Ionicons name="calendar" size={24} color="#007AFF" />
           <Text style={styles.actionText}>Bookings</Text>
@@ -245,7 +245,7 @@ export default function CustomerHomeScreen() {
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push('/subscriptions')}
+          onPress={() => router.push('/subscriptions' as Href)}
         >
           <Ionicons name="card" size={24} color="#007AFF" />
           <Text style={styles.actionText}>Plans</Text>
@@ -257,7 +257,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Vehicles</Text>
-            <TouchableOpacity onPress={() => router.push('/vehicle-list')}>
+            <TouchableOpacity onPress={() => router.push('/vehicle-list' as Href)}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -267,7 +267,7 @@ export default function CustomerHomeScreen() {
               <TouchableOpacity
                 key={vehicle.id}
                 style={styles.vehicleCard}
-                onPress={() => router.push(`/vehicle-details?id=${vehicle.id}`)}
+                onPress={() => router.push(`/vehicle-details?id=${vehicle.id}` as Href)}
               >
                 <Ionicons name="car-sport" size={40} color="#007AFF" />
                 <Text style={styles.vehicleName}>{vehicle.nickname}</Text>
@@ -280,7 +280,7 @@ export default function CustomerHomeScreen() {
 
             <TouchableOpacity
               style={[styles.vehicleCard, styles.addVehicleCard]}
-              onPress={() => router.push('/add-vehicle')}
+              onPress={() => router.push('/add-vehicle' as Href)}
             >
               <Ionicons name="add-circle" size={40} color="#007AFF" />
               <Text style={styles.addVehicleText}>Add Vehicle</Text>
@@ -294,7 +294,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Active Bookings</Text>
-            <TouchableOpacity onPress={() => router.push('/booking-list')}>
+            <TouchableOpacity onPress={() => router.push('/booking-list' as Href)}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -303,7 +303,7 @@ export default function CustomerHomeScreen() {
             <TouchableOpacity
               key={booking.id}
               style={styles.bookingCard}
-              onPress={() => router.push(`/booking-details?id=${booking.id}`)}
+              onPress={() => router.push(`/booking-details?id=${booking.id}` as Href)}
             >
               <View style={styles.bookingHeader}>
                 <View>
@@ -337,7 +337,7 @@ export default function CustomerHomeScreen() {
             <TouchableOpacity
               key={category.id}
               style={styles.categoryCard}
-              onPress={() => router.push(`/service-browse?category=${category.id}`)}
+              onPress={() => router.push(`/service-browse?category=${category.id}` as Href)}
             >
               <View style={styles.categoryIcon}>
                 <Ionicons
@@ -356,7 +356,7 @@ export default function CustomerHomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Top Rated Services</Text>
-          <TouchableOpacity onPress={() => router.push('/service-browse')}>
+          <TouchableOpacity onPress={() => router.push('/service-browse' as Href)}>
             <Text style={styles.seeAll}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -365,7 +365,7 @@ export default function CustomerHomeScreen() {
           <TouchableOpacity
             key={service.id}
             style={styles.serviceCard}
-            onPress={() => router.push(`/service-details?id=${service.id}`)}
+            onPress={() => router.push(`/service-details?id=${service.id}` as Href)}
           >
             <View style={styles.serviceInfo}>
               <Text style={styles.serviceName}>{service.name}</Text>
