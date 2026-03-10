@@ -7,6 +7,8 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
   Image,
   RefreshControl,
   ScrollView,
@@ -15,6 +17,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const ITEM_SIZE = width * 0.72;
+const SPACING = 10;
+const EMPTY_ITEM_SIZE = (width - ITEM_SIZE) / 2;
 
 interface User {
   uid: string;
@@ -64,6 +71,21 @@ interface Booking {
   };
 }
 
+interface CarouselServiceItem {
+  id: string;
+  name?: string;
+  icon?: any; // require() returns a number in React Native
+  route?: string;
+}
+
+const REAL_SERVICES: CarouselServiceItem[] = [
+  { id: '1', name: 'Exterior Wash', icon: require('../assets/icons/washing.jpg'), route: '/ExteriorWashScreen' },
+  { id: '2', name: 'Interior Wash', icon: require('../assets/icons/interior_cleaning.jpg'), route: '/InteriorWashScreen' },
+  { id: '3', name: 'Full Detail', icon: require('../assets/icons/detailing.jpg'), route: '/FullDetailScreen' },
+  { id: '4', name: 'Tire Cleaning', icon: require('../assets/icons/tire_cleaning.jpg'), route: '/TireCleaningScreen' },
+  { id: '5', name: 'Headlight Repair', icon: require('../assets/icons/headlight_cleaning.jpg'), route: '/HeadlightRepairScreen' },
+];
+
 export default function CustomerHomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -71,6 +93,15 @@ export default function CustomerHomeScreen() {
   const [activeBookings, setActiveBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollX = React.useRef(new Animated.Value(0)).current;
+
+  const DATA = React.useMemo(() => {
+    const REPEAT_COUNT = 100;
+    return Array(REPEAT_COUNT).fill(REAL_SERVICES).flat().map((item, index) => ({
+      ...item,
+      id: `${item.id}-${index}`
+    }));
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -135,14 +166,6 @@ export default function CustomerHomeScreen() {
     await AsyncStorage.multiRemove(['customToken', 'idToken', 'user']);
     router.replace('/login' as Href);
   };
-
-  const REAL_SERVICES = [
-    { id: '1', name: 'Exterior Wash', icon: require('../assets/icons/washing.jpg'), route: '/ExteriorWashScreen' },
-    { id: '2', name: 'Interior Wash', icon: require('../assets/icons/interior_cleaning.jpg'), route: '/InteriorWashScreen' },
-    { id: '3', name: 'Full Detail', icon: require('../assets/icons/detailing.jpg'), route: '/FullDetailScreen' },
-    { id: '4', name: 'Tire Cleaning', icon: require('../assets/icons/tire_cleaning.jpg'), route: '/TireCleaningScreen' },
-    { id: '5', name: 'Headlight Repair', icon: require('../assets/icons/headlight_cleaning.jpg'), route: '/HeadlightRepairScreen' },
-  ];
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
@@ -299,28 +322,71 @@ export default function CustomerHomeScreen() {
         </View>
       )}
 
-      {/* Service Categories */}
-      <View style={styles.section}>
+      {/* Service Carousel */}
+      <View style={styles.carouselContainer}>
         <Text style={styles.sectionTitle}>Our Services</Text>
-        <View style={styles.servicesGrid}>
-          {REAL_SERVICES.map((service) => (
-            <TouchableOpacity
-              key={service.id}
-              style={styles.serviceButton}
-              onPress={() => router.push(service.route as Href)}
-              activeOpacity={0.8}
-            >
-              <Image
-                source={service.icon}
-                style={styles.serviceImage}
-                resizeMode="cover"
-              />
-              <View style={styles.serviceOverlay}>
-                <Text style={styles.serviceLabel}>{service.name}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Animated.FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={DATA}
+          keyExtractor={(item: CarouselServiceItem) => item.id}
+          snapToInterval={ITEM_SIZE}
+          contentContainerStyle={{
+            alignItems: 'center',
+            paddingHorizontal: EMPTY_ITEM_SIZE
+          }}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          initialScrollIndex={Math.floor(DATA.length / 2)}
+          getItemLayout={(_, index) => ({
+            length: ITEM_SIZE,
+            offset: ITEM_SIZE * index,
+            index,
+          })}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX as any } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          renderItem={({ item, index }: { item: CarouselServiceItem, index: number }) => {
+            if (!item.name) {
+              return <View style={{ width: EMPTY_ITEM_SIZE }} />;
+            }
+
+            const inputRange = [
+              (index - 1) * ITEM_SIZE,
+              index * ITEM_SIZE,
+              (index + 1) * ITEM_SIZE,
+            ];
+
+            const scale = (scrollX as any).interpolate({
+              inputRange,
+              outputRange: [0.9, 1, 0.9],
+              extrapolate: 'clamp',
+            });
+
+            const opacity = (scrollX as any).interpolate({
+              inputRange,
+              outputRange: [0.6, 1, 0.6],
+              extrapolate: 'clamp',
+            });
+
+            return (
+              <Animated.View style={{ width: ITEM_SIZE, transform: [{ scale }], opacity }}>
+                <TouchableOpacity
+                  style={styles.serviceItem}
+                  onPress={() => router.push(item.route as Href)}
+                  activeOpacity={0.9}
+                >
+                  <Image source={item.icon} style={styles.carouselImage} />
+                  <View style={styles.carouselOverlay}>
+                    <Text style={styles.carouselLabel}>{item.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          }}
+        />
       </View>
 
 
@@ -404,9 +470,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#000',
+    paddingHorizontal: 20,
+    marginBottom: 5,
   },
   seeAll: {
     fontSize: 14,
@@ -490,43 +558,39 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 8,
   },
-  servicesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 15,
+  carouselContainer: {
+    paddingVertical: 20,
   },
-  serviceButton: {
-    width: '48%',
-    height: 140,
+  serviceItem: {
+    marginHorizontal: SPACING,
+    height: 220,
     backgroundColor: '#FFF',
-    borderRadius: 20,
+    borderRadius: 24,
     overflow: 'hidden',
-    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  serviceImage: {
+  carouselImage: {
     width: '100%',
     height: '100%',
     position: 'absolute',
   },
-  serviceOverlay: {
+  carouselOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-end',
-    padding: 12,
+    padding: 20,
   },
-  serviceLabel: {
-    fontSize: 16,
+  carouselLabel: {
+    fontSize: 20,
     color: '#FFF',
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 4,
   },
 
   logoutButton: {
