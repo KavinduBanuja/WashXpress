@@ -80,7 +80,7 @@ interface CarouselServiceItem {
 
 const REAL_SERVICES: CarouselServiceItem[] = [
   { id: '1', name: 'Exterior Wash', icon: require('../assets/icons/washing.jpg'), route: '/ExteriorWashScreen' },
-  { id: '2', name: 'Interior Wash', icon: require('../assets/icons/interior_cleaning.jpg'), route: '/InteriorWashScreen' },
+  { id: '2', name: 'Interior Clean', icon: require('../assets/icons/interior_cleaning.jpg'), route: '/InteriorWashScreen' },
   { id: '3', name: 'Full Detail', icon: require('../assets/icons/detailing.jpg'), route: '/FullDetailScreen' },
   { id: '4', name: 'Tire Cleaning', icon: require('../assets/icons/tire_cleaning.jpg'), route: '/TireCleaningScreen' },
   { id: '5', name: 'Headlight Repair', icon: require('../assets/icons/headlight_cleaning.jpg'), route: '/HeadlightRepairScreen' },
