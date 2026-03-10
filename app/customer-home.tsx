@@ -67,7 +67,6 @@ interface Booking {
 export default function CustomerHomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [activeBookings, setActiveBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +88,6 @@ export default function CustomerHomeScreen() {
 
       // Load all data in parallel
       await Promise.all([
-        loadCategories(),
         loadVehicles(),
         loadActiveBookings(),
       ]);
@@ -101,17 +99,6 @@ export default function CustomerHomeScreen() {
     }
   };
 
-  const loadCategories = async () => {
-    try {
-      const data = await apiFetch('/services/categories', { requiresAuth: false }, 'customer');
-
-      if (data.success) {
-        setCategories(data.data.categories.slice(0, 6)); // Show first 6
-      }
-    } catch (error) {
-      console.error('Load categories error:', error);
-    }
-  };
 
 
   const loadVehicles = async () => {
@@ -149,17 +136,13 @@ export default function CustomerHomeScreen() {
     router.replace('/login' as Href);
   };
 
-  const getCategoryIcon = (iconName: string) => {
-    const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
-      'droplets': 'water',
-      'sparkles': 'sparkles',
-      'star': 'star',
-      'car': 'car',
-      'shield': 'shield',
-      'circle': 'ellipse',
-    };
-    return iconMap[iconName] || 'car';
-  };
+  const REAL_SERVICES = [
+    { id: '1', name: 'Exterior Wash', icon: require('../assets/icons/washing.jpg'), route: '/ExteriorWashScreen' },
+    { id: '2', name: 'Interior Wash', icon: require('../assets/icons/interior_cleaning.jpg'), route: '/InteriorWashScreen' },
+    { id: '3', name: 'Full Detail', icon: require('../assets/icons/detailing.jpg'), route: '/FullDetailScreen' },
+    { id: '4', name: 'Tire Cleaning', icon: require('../assets/icons/tire_cleaning.jpg'), route: '/TireCleaningScreen' },
+    { id: '5', name: 'Headlight Repair', icon: require('../assets/icons/headlight_cleaning.jpg'), route: '/HeadlightRepairScreen' },
+  ];
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
@@ -318,22 +301,23 @@ export default function CustomerHomeScreen() {
 
       {/* Service Categories */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Service Categories</Text>
-        <View style={styles.categoriesGrid}>
-          {categories.map((category) => (
+        <Text style={styles.sectionTitle}>Our Services</Text>
+        <View style={styles.servicesGrid}>
+          {REAL_SERVICES.map((service) => (
             <TouchableOpacity
-              key={category.id}
-              style={styles.categoryCard}
-              onPress={() => router.push(`/service-browse?category=${category.id}` as Href)}
+              key={service.id}
+              style={styles.serviceButton}
+              onPress={() => router.push(service.route as Href)}
+              activeOpacity={0.8}
             >
-              <View style={styles.categoryIcon}>
-                <Ionicons
-                  name={getCategoryIcon(category.icon)}
-                  size={32}
-                  color="#007AFF"
-                />
+              <Image
+                source={service.icon}
+                style={styles.serviceImage}
+                resizeMode="cover"
+              />
+              <View style={styles.serviceOverlay}>
+                <Text style={styles.serviceLabel}>{service.name}</Text>
               </View>
-              <Text style={styles.categoryName}>{category.name}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -506,32 +490,43 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 8,
   },
-  categoriesGrid: {
+  servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    marginTop: 15,
   },
-  categoryCard: {
-    width: '30%',
+  serviceButton: {
+    width: '48%',
+    height: 140,
     backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  categoryIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#F0F8FF',
-    justifyContent: 'center',
-    alignItems: 'center',
+  serviceImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
   },
-  categoryName: {
-    fontSize: 12,
-    color: '#000',
-    marginTop: 8,
-    textAlign: 'center',
+  serviceOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-end',
+    padding: 12,
+  },
+  serviceLabel: {
+    fontSize: 16,
+    color: '#FFF',
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
 
   logoutButton: {
