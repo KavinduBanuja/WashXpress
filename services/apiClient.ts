@@ -73,14 +73,15 @@ export async function apiFetch<T = any>(
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log(`🚀 API Request [${endpoint}]`);
+    const fullURL = `${baseURL}${endpoint}`;
+    console.log(`🚀 API Request [${fetchOptions.method || 'GET'}] ${fullURL}`);
 
     // Add timeout to fetch
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
     try {
-      const response = await fetch(`${baseURL}${endpoint}`, {
+      const response = await fetch(fullURL, {
         ...fetchOptions,
         headers,
         signal: controller.signal,
@@ -90,10 +91,11 @@ export async function apiFetch<T = any>(
 
       if (!response.ok) {
         const errorText = await response.text();
-        let errorMessage = 'API request failed';
+        console.error(`❌ HTTP ${response.status} [${fullURL}]:`, errorText);
+        let errorMessage = `HTTP ${response.status}`;
         try {
           const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorMessage;
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
         } catch (e) {
           errorMessage = errorText || errorMessage;
         }

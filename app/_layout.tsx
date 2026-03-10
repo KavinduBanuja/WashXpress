@@ -21,10 +21,14 @@ export default function RootLayout() {
           <Stack.Screen name="washer-job-request" />
           <Stack.Screen name="washer-requests" />
           <Stack.Screen name="service-browse" />
+          <Stack.Screen name="my-subscription" options={{ headerShown: false }} />
           <Stack.Screen name="service-details" />
           <Stack.Screen name="booking-details" />
           <Stack.Screen name="edit-profile" />
+          <Stack.Screen name="subscriptions" options={{ headerShown: false }} />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="create-booking" options={{ headerShown: false }} />
+          <Stack.Screen name="booking-confirmation" options={{ headerShown: false, gestureEnabled: false }} />
         </Stack>
       </QueryClientProvider>
     </AuthProvider>

@@ -18,41 +18,42 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
-    isLoading: true,
+    isLoading: false, // ⛔ Auto-retrieval disabled for testing — was: true
     token: null,
     userType: null,
     user: null,
   });
 
-  useEffect(() => {
-    // Load auth state from storage on mount
-    const loadStore = async () => {
-      try {
-        const token = await SecureStore.getItemAsync('accessToken');
-        const userType = (await SecureStore.getItemAsync('userType')) as 'customer' | 'provider' | null;
-        
-        let user = null;
-        if (userType) {
-          const userStr = await SecureStore.getItemAsync(userType === 'customer' ? 'customer' : 'provider');
-          if (userStr) {
-            user = JSON.parse(userStr);
-          }
-        }
-
-        setState({
-          isLoading: false,
-          token,
-          userType,
-          user,
-        });
-      } catch (error) {
-        console.error('Failed to load auth state:', error);
-        setState(s => ({ ...s, isLoading: false }));
-      }
-    };
-
-    loadStore();
-  }, []);
+  // ⛔ AUTO TOKEN RETRIEVAL DISABLED FOR TESTING — uncomment to re-enable
+  // useEffect(() => {
+  //   // Load auth state from storage on mount
+  //   const loadStore = async () => {
+  //     try {
+  //       const token = await SecureStore.getItemAsync('accessToken');
+  //       const userType = (await SecureStore.getItemAsync('userType')) as 'customer' | 'provider' | null;
+  //       
+  //       let user = null;
+  //       if (userType) {
+  //         const userStr = await SecureStore.getItemAsync(userType === 'customer' ? 'customer' : 'provider');
+  //         if (userStr) {
+  //           user = JSON.parse(userStr);
+  //         }
+  //       }
+  //
+  //       setState({
+  //         isLoading: false,
+  //         token,
+  //         userType,
+  //         user,
+  //       });
+  //     } catch (error) {
+  //       console.error('Failed to load auth state:', error);
+  //       setState(s => ({ ...s, isLoading: false }));
+  //     }
+  //   };
+  //
+  //   loadStore();
+  // }, []);
 
   const setAuth = async (token: string, userType: 'customer' | 'provider', user: any) => {
     await SecureStore.setItemAsync('accessToken', token);

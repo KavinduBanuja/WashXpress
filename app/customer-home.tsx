@@ -212,39 +212,26 @@ export default function CustomerHomeScreen() {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('/service-browse' as Href)}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/service-browse' as Href)}>
           <Ionicons name="search" size={24} color="#007AFF" />
           <Text style={styles.actionText}>Find Service</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('/vehicle-list' as Href)}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/vehicle-list' as Href)}>
           <Ionicons name="car-sport" size={24} color="#007AFF" />
           <Text style={styles.actionText}>My Fleet</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('/booking-list' as Href)}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/booking-list' as Href)}>
           <Ionicons name="calendar" size={24} color="#007AFF" />
           <Text style={styles.actionText}>Bookings</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('/subscriptions' as Href)}
-        >
-          <Ionicons name="card" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>Plans</Text>
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/my-subscription' as Href)}>
+          <Ionicons name="ribbon" size={24} color="#007AFF" />
+          <Text style={styles.actionText}>My Plan</Text>
         </TouchableOpacity>
       </View>
-
       {/* My Vehicles */}
       {vehicles.length > 0 && (
         <View style={styles.section}>

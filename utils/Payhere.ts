@@ -38,3 +38,46 @@ const PayHereMock = {
 const PayHere = PayHereReal || PayHereMock;
 
 export default PayHere;
+
+// ── Named export used by create-booking.tsx ───────────────────
+interface PayHereParams {
+  bookingId: string;
+  amount: number;
+  currency: string;
+  hash: string;
+  description: string;
+  onSuccess: () => void;
+  onError: (msg: string) => void;
+  onDismiss: () => void;
+}
+
+export function initiatePayHerePayment(params: PayHereParams): Promise<void> {
+  return new Promise((resolve) => {
+    const paymentObject = {
+      sandbox: true, // ← set to false in production
+      merchant_id: process.env.EXPO_PUBLIC_PAYHERE_MERCHANT_ID ?? '',
+      return_url: '',
+      cancel_url: '',
+      notify_url: '',
+      order_id: params.bookingId,
+      items: params.description,
+      amount: params.amount.toFixed(2),
+      currency: params.currency,
+      hash: params.hash,
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      country: 'Sri Lanka',
+    };
+
+    PayHere.startPayment(
+      paymentObject,
+      (paymentId: string) => { params.onSuccess(); resolve(); },
+      (error: string) => { params.onError(error); resolve(); },
+      () => { params.onDismiss(); resolve(); },
+    );
+  });
+}

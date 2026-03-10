@@ -245,7 +245,7 @@ export default function ServiceDetailsScreen() {
                 </View>
                 <TouchableOpacity
                     style={[styles.bookBtn, { backgroundColor: type.color }]}
-                    onPress={() => router.push(`/customerOrderScreen?serviceId=${service.id}` as any)}
+                    onPress={() => router.push({ pathname: '/create-booking' as any, params: { serviceId: service.id } })}
                 >
                     <Text style={styles.bookBtnText}>Book Now</Text>
                     <Ionicons name="arrow-forward" size={20} color="#fff" />
