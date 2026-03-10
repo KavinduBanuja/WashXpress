@@ -1,10 +1,18 @@
+import React, { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
+import SplashScreen from './Splashscreen';
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  const [showSplash, setShowSplash] = useState(true); // ← start with splash
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+  
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>

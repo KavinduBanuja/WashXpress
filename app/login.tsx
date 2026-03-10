@@ -84,7 +84,7 @@ export default function LoginScreen() {
         >
           {/* Logo Header */}
           <View style={styles.header}>
-            <Ionicons name="water" size={48} color="#fff" />
+           
             <Text style={styles.title}>WashXpress</Text>
             <Text style={styles.subtitle}>Premium Car Care On Demand</Text>
           </View>
