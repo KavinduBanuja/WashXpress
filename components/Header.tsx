@@ -14,9 +14,10 @@ interface HeaderProps {
     title: string;
     showBack?: boolean;
     rightElement?: React.ReactNode;
+    theme?: 'light' | 'dark';
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, showBack = true, rightElement }) => {
+export const Header: React.FC<HeaderProps> = ({ title, showBack = true, rightElement, theme = 'light' }) => {
     const router = useRouter();
     const { userType } = useAuth();
 
@@ -34,18 +35,20 @@ export const Header: React.FC<HeaderProps> = ({ title, showBack = true, rightEle
         }
     };
 
+    const isDark = theme === 'dark';
+
     return (
-        <View style={styles.header}>
+        <View style={[styles.header, isDark && styles.headerDark]}>
             <View style={styles.leftContainer}>
                 {showBack && (
                     <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color="#2563eb" />
-                        {Platform.OS === 'ios' && <Text style={styles.backText}>Back</Text>}
+                        <Ionicons name="chevron-back" size={28} color={isDark ? "#FFF" : "#2563eb"} />
+                        {Platform.OS === 'ios' && <Text style={[styles.backText, isDark && styles.backTextDark]}>Back</Text>}
                     </TouchableOpacity>
                 )}
             </View>
             <View style={styles.titleContainer}>
-                <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
+                <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]} numberOfLines={1}>{title}</Text>
             </View>
             <View style={styles.rightContainer}>
                 {rightElement || <View style={{ width: 40 }} />}
@@ -66,6 +69,10 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#E0E0E0',
         zIndex: 100,
+    },
+    headerDark: {
+        backgroundColor: '#0d1629',
+        borderBottomColor: 'rgba(255,255,255,0.06)',
     },
     leftContainer: {
         flex: 1,
@@ -89,9 +96,15 @@ const styles = StyleSheet.create({
         color: '#2563eb',
         marginLeft: -4,
     },
+    backTextDark: {
+        color: '#FFF',
+    },
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: '#000',
+    },
+    headerTitleDark: {
+        color: '#FFF',
     },
 });

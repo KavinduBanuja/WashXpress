@@ -100,90 +100,92 @@ export default function EditProfileScreen() {
         );
     }
 
+    const isDark = userType === 'provider';
+
     return (
         <KeyboardAvoidingView
-            style={styles.container}
+            style={[styles.container, isDark && styles.containerDark]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <Header title="Edit Profile" />
+            <Header title="Edit Profile" theme={isDark ? 'dark' : 'light'} />
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>Display Name</Text>
+                    <Text style={[styles.label, isDark && styles.labelDark]}>Display Name</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isDark && styles.inputDark]}
                         value={displayName}
                         onChangeText={setDisplayName}
                         placeholder="How should we call you?"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={isDark ? "#64748b" : "#999"}
                     />
                 </View>
                 
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>Profile Picture URL</Text>
+                    <Text style={[styles.label, isDark && styles.labelDark]}>Profile Picture URL</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isDark && styles.inputDark]}
                         value={photoURL}
                         onChangeText={setPhotoURL}
                         placeholder="https://example.com/photo.jpg"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={isDark ? "#64748b" : "#999"}
                     />
                 </View>
 
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>First Name</Text>
+                    <Text style={[styles.label, isDark && styles.labelDark]}>First Name</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isDark && styles.inputDark]}
                         value={firstName}
                         onChangeText={setFirstName}
                         placeholder="First Name"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={isDark ? "#64748b" : "#999"}
                     />
                     {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
                 </View>
 
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>Last Name</Text>
+                    <Text style={[styles.label, isDark && styles.labelDark]}>Last Name</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isDark && styles.inputDark]}
                         value={lastName}
                         onChangeText={setLastName}
                         placeholder="Last Name"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={isDark ? "#64748b" : "#999"}
                     />
                 </View>
 
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>Phone Number</Text>
+                    <Text style={[styles.label, isDark && styles.labelDark]}>Phone Number</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isDark && styles.inputDark]}
                         value={phoneNumber}
                         onChangeText={setPhoneNumber}
                         placeholder="e.g. +1 234 567 8900"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={isDark ? "#64748b" : "#999"}
                         keyboardType="phone-pad"
                     />
                 </View>
 
                 {userType === 'provider' && (
                     <View style={styles.formGroup}>
-                        <Text style={styles.label}>Service Area</Text>
+                        <Text style={[styles.label, isDark && styles.labelDark]}>Service Area</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, isDark && styles.inputDark]}
                             value={area}
                             onChangeText={setArea}
                             placeholder="e.g. Colombo, Pelawatta"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={isDark ? "#64748b" : "#999"}
                         />
                     </View>
                 )}
 
                 {/* Email is typically read-only or handled separately via Auth providers */}
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>Email (Read-only)</Text>
+                    <Text style={[styles.label, isDark && styles.labelDark]}>Email (Read-only)</Text>
                     <TextInput
-                        style={[styles.input, styles.readOnlyInput]}
+                        style={[styles.input, styles.readOnlyInput, isDark && styles.readOnlyInputDark]}
                         value={profile?.email || ''}
                         editable={false}
                     />
@@ -191,7 +193,7 @@ export default function EditProfileScreen() {
 
             </ScrollView>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, isDark && styles.footerDark]}>
                 <TouchableOpacity
                     style={[styles.saveButton, updateProfileMutation.isPending && styles.saveButtonDisabled]}
                     onPress={handleSave}
@@ -212,6 +214,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F5F5F5',
+    },
+    containerDark: {
+        backgroundColor: '#0d1629',
     },
     loadingContainer: {
         flex: 1,
@@ -250,6 +255,9 @@ const styles = StyleSheet.create({
         color: '#333',
         marginBottom: 8,
     },
+    labelDark: {
+        color: '#94a3b8',
+    },
     input: {
         backgroundColor: '#FFF',
         borderWidth: 1,
@@ -259,9 +267,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#000',
     },
+    inputDark: {
+        backgroundColor: '#1e2d4a',
+        borderColor: 'rgba(255,255,255,0.06)',
+        color: '#FFF',
+    },
     readOnlyInput: {
         backgroundColor: '#F0F0F0',
         color: '#666',
+    },
+    readOnlyInputDark: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        color: '#64748b',
     },
     errorText: {
         color: '#FF3B30',
@@ -273,6 +290,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
         borderTopWidth: 1,
         borderTopColor: '#E0E0E0',
+    },
+    footerDark: {
+        backgroundColor: '#0d1629',
+        borderTopColor: 'rgba(255,255,255,0.06)',
     },
     saveButton: {
         backgroundColor: '#2563eb',

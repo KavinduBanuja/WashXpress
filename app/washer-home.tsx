@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../hooks/useProfile';
 
 // ── Types ────────────────────────────────────────────────
 type Job = {
@@ -59,6 +61,8 @@ const badgeStyles = StyleSheet.create({
 // ── Main Component ───────────────────────────────────────
 export default function WasherHome() {
     const router = useRouter();
+    const { user } = useAuth();
+    const { data: profile, isLoading: profileLoading } = useProfile();
     const [activeTab, setActiveTab] = useState('home');
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
@@ -113,6 +117,16 @@ export default function WasherHome() {
         }
     };
 
+    const getUserName = () => {
+        if (profileLoading) return '...';
+        if (profile?.displayName) return profile.displayName;
+        if (user?.displayName) return user.displayName;
+        if (profile?.firstName || profile?.lastName) {
+            return `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+        }
+        return 'Washer';
+    };
+
     return (
         <SafeAreaView style={styles.safe}>
             <StatusBar barStyle="light-content" backgroundColor="#16a34a" />
@@ -124,9 +138,11 @@ export default function WasherHome() {
                 {/* ── Header ── */}
                 <View style={styles.header}>
                     <View style={styles.headerTop}>
-                        <View>
-                            <Text style={styles.welcomeText}>Welcome back</Text>
-                            <Text style={styles.providerName}>Indrajith</Text>
+                        <View style={styles.headerGreeting}>
+                            <View>
+                                <Text style={styles.welcomeText}>Welcome back,</Text>
+                                <Text style={styles.providerName}>{getUserName()}</Text>
+                            </View>
                         </View>
                         <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile' as any)}>
                             <Ionicons name="person-outline" size={22} color="#fff" />
@@ -304,8 +320,9 @@ const styles = StyleSheet.create({
     // Header
     header:            { backgroundColor: '#0d1629', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30 },
     headerTop:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    welcomeText:       { color: '#93c5fd', fontSize: 14, marginBottom: 4 },
-    providerName:      { color: '#fff', fontSize: 26, fontWeight: '700' },
+    headerGreeting:    { flex: 1 },
+    welcomeText:       { color: '#93c5fd', fontSize: 14, marginBottom: 2 },
+    providerName:      { color: '#fff', fontSize: 24, fontWeight: '700' },
     profileBtn:        { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
 
     // Earnings Card
