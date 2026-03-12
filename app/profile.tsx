@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,10 +18,19 @@ import { auth } from '../firebaseConfig';
 import { useProfile } from '../hooks/useProfile';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { logout, userType } = useAuth();
   const { data: profile, isLoading, error, refetch } = useProfile();
 
-  console.log(`[ProfileScreen] userType=${userType}, isLoading=${isLoading}, hasProfile=${!!profile}, hasError=${!!error}`);
+  // Refetch profile data whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      console.log('[ProfileScreen] Screen focused - refetching profile');
+      refetch();
+    }, [refetch])
+  );
+
+  console.log(`[ProfileScreen] userType=${userType}, isLoading=${isLoading}, isVerified=${profile?.isVerified}, hasError=${!!error}`);
   if (profile) console.log(`[ProfileScreen] profileUID=${profile.uid}`);
 
   const handleSignOut = () => {
@@ -120,11 +129,17 @@ export default function ProfileScreen() {
             )}
           </View>
           <Text style={styles.userName}>{getUserName()}</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
+          <View style={[
+            styles.badge, 
+            userType === 'provider' && !profile?.isVerified && styles.unverifiedBadge
+          ]}>
+            <Text style={[
+              styles.badgeText,
+              userType === 'provider' && !profile?.isVerified && styles.unverifiedBadgeText
+            ]}>
               {userType === 'customer'
                 ? (profile?.subscription?.tier || 'Free Member')
-                : 'Verified Washer'
+                : (profile?.isVerified ? 'Verified Washer' : 'Unverified Washer')
               }
             </Text>
           </View>
@@ -353,6 +368,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#0284C7',
+  },
+  unverifiedBadge: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+  },
+  unverifiedBadgeText: {
+    color: '#EF4444',
   },
   infoSection: {
     paddingHorizontal: 20,

@@ -104,8 +104,11 @@ export default function WasherPendingScreen() {
         setProfile(p);
         return p;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fetch profile error:', error);
+      if (error.message === 'Route not found') {
+        Alert.alert('Configuration Error', 'The profile endpoint was not found. Please refresh the app or contact support.');
+      }
     }
     return null;
   };

@@ -128,8 +128,9 @@ export interface CustomerProfile {
   area?: string;
   rating?: number;
   serviceAreas?: string[];
-  washerStatus?: string;
+   washerStatus?: string;
   certificationStatus?: string;
+  isVerified?: boolean;
 }
 
 export async function getProfile() {

@@ -1,3 +1,4 @@
+import { apiFetch } from '@/services/apiClient';
 import React, { useEffect, useState } from 'react';
 import {
     View,
@@ -46,18 +47,8 @@ export default function WasherBookingsScreen() {
     const loadBookings = async () => {
         try {
             setLoading(true);
-            const token = await AsyncStorage.getItem('idToken');
-
             const status = activeTab === 'confirmed' ? 'confirmed,in_progress' : 'completed';
-            const response = await fetch(
-                `http://192.168.1.5:5001/washxpress-19b94/us-central1/api/provider/bookings?status=${status}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const data = await response.json();
+            const data = await apiFetch(`/bookings?status=${status}`, {}, 'provider');
 
             if (data.success) {
                 setBookings(data.data.bookings);

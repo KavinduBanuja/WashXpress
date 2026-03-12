@@ -1,14 +1,10 @@
-import { Redirect } from 'expo-router';
-
-// ── AUTO-RETRIEVAL (commented out for testing) ────────────────────────────────
-// To restore: uncomment everything below and delete the simple Redirect return.
-/*
 import * as SecureStore from 'expo-secure-store';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { auth } from '../firebaseConfig';
 import { apiFetch } from '../services/apiClient';
+import { Redirect } from 'expo-router';
 
 type Destination =
   | '/login'
@@ -47,14 +43,35 @@ export default function Index() {
         if (userType === 'customer') { setDestination('/customer-home'); return; }
 
         if (userType === 'provider') {
-          try {
-            const data = await apiFetch('/auth/washer/profile', {}, 'provider');
-            setDestination(data.success && data.provider?.isVerified ? '/washer-home' : '/washer-pending');
-          } catch {
-            setDestination('/washer-pending');
-          }
-          return;
-        }
+  try {
+    console.log(`[Index] 🔍 Checking washer status for UID: ${user.uid}`);
+    const data = await apiFetch('/auth/washer/profile', {}, 'provider');
+    
+    // Support both flattened and nested structures
+    const providerData = data.provider || (data.data && data.data.provider);
+    
+    if (data.success && providerData) {
+      const isVerified = providerData.isVerified === true;
+      const status = providerData.washerStatus || providerData.status;
+      
+      console.log(`[Index] ✅ Profile Found: isVerified=${isVerified}, status=${status}`);
+      
+      if (isVerified) {
+        setDestination('/washer-home');
+      } else {
+        console.warn(`[Index] ⏳ Washer is not yet verified. redirecting to pending.`);
+        setDestination('/washer-pending');
+      }
+    } else {
+      console.warn(`[Index] ⚠️  Provider fetch succeeded but no data found. defaulting to pending.`, data);
+      setDestination('/washer-pending');
+    }
+  } catch (error: any) {
+    console.error(`[Index] ❌ Provider profile fetch failed:`, error.message);
+    setDestination('/washer-home');
+  }
+  return;
+}
 
         setDestination('/login');
       } catch {
@@ -75,10 +92,4 @@ export default function Index() {
   }
 
   return <Redirect href={destination} />;
-}
-*/
-// ─────────────────────────────────────────────────────────────────────────────
-
-export default function Index() {
-  return <Redirect href="/login" />;
 }

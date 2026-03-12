@@ -113,10 +113,10 @@ export default function WasherHomeScreen() {
 
     const loadProfile = async () => {
         try {
-            const data = await apiFetch('/profile', {}, 'provider');
+            const data = await apiFetch('/auth/washer/profile', {}, 'provider');
 
             if (data.success) {
-                setProfile(data.data.provider);
+                setProfile(data.provider);
             }
         } catch (error) {
             console.error('Load profile error:', error);

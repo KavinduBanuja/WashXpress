@@ -1,11 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
+import { apiFetch } from '@/services/apiClient';
+import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator, Alert, Linking, Platform,
     ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { apiFetch } from '../services/apiClient';
 
 interface AcceptedBooking {
     id: string;
@@ -56,6 +56,7 @@ const VEHICLE_TYPE_ICONS: Record<string, string> = {
 };
 
 export default function WasherBookingDetailsScreen() {
+    const router = useRouter();
     const { id: bookingId } = useLocalSearchParams<{ id: string }>();
     const [booking, setBooking] = useState<AcceptedBooking | null>(null);
     const [loading, setLoading] = useState(true);
@@ -70,10 +71,18 @@ export default function WasherBookingDetailsScreen() {
         try {
             setLoading(true);
             const res = await apiFetch(`/bookings/${bookingId}`, {}, 'provider');
-            if (res.success) setBooking(res.data.booking);
-            else { Alert.alert('Error', 'Booking not found'); router.back(); }
-        } catch { Alert.alert('Error', 'Failed to load booking'); }
-        finally { setLoading(false); }
+            if (res.success) {
+                setBooking(res.data.booking);
+            } else {
+                Alert.alert('Error', 'Booking not found');
+                router.back();
+            }
+        } catch (error) {
+            console.error('Load booking error:', error);
+            Alert.alert('Error', 'Failed to load booking');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleStartService = () => {
@@ -85,15 +94,21 @@ export default function WasherBookingDetailsScreen() {
                 {
                     text: 'Start Now',
                     onPress: async () => {
-                        setActionLoading(true);
                         try {
+                            setActionLoading(true);
                             const res = await apiFetch(`/bookings/${bookingId}/start`, { method: 'PATCH' }, 'provider');
                             if (res.success) {
+                                Alert.alert('Success', 'Service started!');
                                 await loadBooking();
                                 Alert.alert('Service Started! 🚿', 'The customer has been notified you have arrived.');
-                            } else Alert.alert('Error', res.message || 'Failed to start service');
-                        } catch (e: any) { Alert.alert('Error', e.message); }
-                        finally { setActionLoading(false); }
+                            } else {
+                                Alert.alert('Error', res.message || 'Failed to start service');
+                            }
+                        } catch (e: any) {
+                            Alert.alert('Error', e.message);
+                        } finally {
+                            setActionLoading(false);
+                        }
                     },
                 },
             ]
@@ -109,15 +124,26 @@ export default function WasherBookingDetailsScreen() {
                 {
                     text: 'Mark Complete',
                     onPress: async () => {
-                        setActionLoading(true);
                         try {
+                            setActionLoading(true);
                             const res = await apiFetch(`/bookings/${bookingId}/complete`, { method: 'PATCH' }, 'provider');
                             if (res.success) {
-                                await loadBooking();
-                                Alert.alert('Job Complete! 🎉', "Great work! Your earnings have been updated.");
-                            } else Alert.alert('Error', res.message || 'Failed to complete service');
-                        } catch (e: any) { Alert.alert('Error', e.message); }
-                        finally { setActionLoading(false); }
+                                Alert.alert('Success! 🎉', 'Service completed. Great job!', [
+                                    {
+                                        text: 'OK',
+                                        onPress: () => {
+                                            router.replace('/washer-home' as Href);
+                                        },
+                                    },
+                                ]);
+                            } else {
+                                Alert.alert('Error', res.message || 'Failed to complete service');
+                            }
+                        } catch (e: any) {
+                            Alert.alert('Error', e.message);
+                        } finally {
+                            setActionLoading(false);
+                        }
                     },
                 },
             ]

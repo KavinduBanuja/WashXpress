@@ -106,21 +106,24 @@ export async function apiFetch<T = any>(
         }
 
         // 2. Extract readable error message
-        let errorMessage = `HTTP ${response.status}`;
+        let errorMessage = 'Something went wrong';
         if (errorData) {
-          // Extract meaningful fields: message, error, detail
-          errorMessage = errorData.message || errorData.error || errorData.detail || errorMessage;
-          
-          // Ensure it's not still an object (e.g. if some weird JSON was returned)
+          // Handle nested error structures (e.g. { error: { message: "..." } })
+          errorMessage = errorData.message || (errorData.error && errorData.error.message) || errorData.error || errorText;
           if (typeof errorMessage !== 'string') {
             errorMessage = JSON.stringify(errorMessage);
           }
-        } else if (errorText && errorText.length < 200) {
+        } else {
           errorMessage = errorText;
         }
 
         // 3. Log detailed error info for debugging
-        console.error(`❌ API Error [${response.status}] ${fullURL}:`, errorData || errorText);
+        const method = fetchOptions.method || 'GET';
+        if (errorMessage === 'Route not found') {
+          console.error(`⚠️  [apiClient] Route not found (404) for: [${method}] ${fullURL}. Please verify backend route registration.`);
+        } else {
+          console.error(`❌ API Error [${response.status}] ${fullURL}:`, errorData || errorText);
+        }
         
         throw new Error(errorMessage);
       }

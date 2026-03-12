@@ -1,3 +1,4 @@
+import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -17,12 +18,27 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ title, showBack = true, rightElement }) => {
     const router = useRouter();
+    const { userType } = useAuth();
+
+    const handleBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            // Fallback: If no history, go to the appropriate home screen
+            // This prevents accidental redirect to index -> login
+            if (userType === 'provider') {
+                router.replace('/washer-home' as any);
+            } else {
+                router.replace('/customer-home' as any);
+            }
+        }
+    };
 
     return (
         <View style={styles.header}>
             <View style={styles.leftContainer}>
                 {showBack && (
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={28} color="#2563eb" />
                         {Platform.OS === 'ios' && <Text style={styles.backText}>Back</Text>}
                     </TouchableOpacity>
