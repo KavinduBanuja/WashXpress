@@ -1,13 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
-=======
-import { apiFetch } from '@/services/apiClient';
-import { getProfileFromFirebase } from '@/services/authService';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
->>>>>>> bba8704429d380204cdacdf03b5a35cea2da5f17
 import {
     View,
     Text,
@@ -23,29 +14,8 @@ import { useRouter } from 'expo-router';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
-<<<<<<< HEAD
-// ── Types ──────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────
 type Job = {
-=======
-interface WasherProfile {
-    uid: string;
-    displayName: string;
-    firstName?: string;
-    lastName?: string;
-    email: string;
-    phoneNumber: string;
-    photoURL?: string;
-    area: string;
-    rating: number;
-    totalReviews: number;
-    totalBookings: number;
-    isActive: boolean;
-    isVerified: boolean;
-    memberSince: string;
-}
-
-interface Booking {
->>>>>>> bba8704429d380204cdacdf03b5a35cea2da5f17
     id: string;
     name: string;
     vehicle: string;
@@ -58,7 +28,7 @@ interface Booking {
     priority: string;
 };
 
-// ── Helpers ─────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────
 function formatDate(dateStr: string) {
     const today = new Date();
     const date = new Date(dateStr);
@@ -73,442 +43,10 @@ function PriorityBadge({ priority }: { priority: string }) {
         Priority: { bg: '#dbeafe', text: '#1d4ed8' },
         Standard: { bg: '#f3f4f6', text: '#6b7280' },
     };
-<<<<<<< HEAD
     const s = map[priority] || map.Standard;
     return (
         <View style={[badgeStyles.badge, { backgroundColor: s.bg }]}>
             <Text style={[badgeStyles.text, { color: s.text }]}>{priority}</Text>
-=======
-
-    const loadProfile = async () => {
-        try {
-            const data = await apiFetch('/auth/washer/profile', {}, 'provider');
-
-            if (data.success) {
-                let profileData = data.provider;
-
-                // Fetch full profile from Firestore to get firstName/lastName
-                if (profileData?.uid) {
-                    try {
-                        const firestoreProfile = await getProfileFromFirebase(profileData.uid, 'provider');
-                        if (firestoreProfile) {
-                            profileData = {
-                                ...profileData,
-                                firstName: firestoreProfile.firstName,
-                                lastName: firestoreProfile.lastName,
-                                displayName: firestoreProfile.displayName || profileData.displayName,
-                            };
-                        }
-                    } catch (err) {
-                        console.warn('Could not fetch profile from Firestore:', err);
-                    }
-                }
-
-                setProfile(profileData);
-            }
-        } catch (error) {
-            console.error('Load profile error:', error);
-        }
-    };
-
-    const loadCurrentJob = async () => {
-        try {
-            const data = await apiFetch('/bookings?status=in_progress&limit=1', {}, 'provider');
-
-            if (data.success && data.data.bookings.length > 0) {
-                setCurrentJob(data.data.bookings[0]);
-            } else {
-                setCurrentJob(null);
-            }
-        } catch (error) {
-            console.error('Load current job error:', error);
-        }
-    };
-
-    const loadNextBooking = async () => {
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const data = await apiFetch(`/bookings?status=confirmed&startDate=${today}&limit=1`, {}, 'provider');
-
-            if (data.success && data.data.bookings.length > 0) {
-                setNextBooking(data.data.bookings[0]);
-            } else {
-                setNextBooking(null);
-            }
-        } catch (error) {
-            console.error('Load next booking error:', error);
-        }
-    };
-
-    const loadPendingRequests = async (silent = false) => {
-        try {
-            const data = await apiFetch('/bookings?status=pending&limit=10', {}, 'provider');
-
-            if (data.success) {
-                setRequests(data.data.bookings);
-                setStats(prev => ({ ...prev, pendingRequests: data.data.bookings.length }));
-
-                // Show notification if new requests (only if silent update)
-                if (silent && data.data.bookings.length > 0) {
-                    // You can show a badge or notification here
-                }
-            }
-        } catch (error) {
-            console.error('Load pending requests error:', error);
-        }
-    };
-
-    const loadStats = async () => {
-        try {
-            const token = await AsyncStorage.getItem('idToken');
-            const today = new Date().toISOString().split('T')[0];
-
-            // Get today's completed bookings
-            const todayData = await apiFetch(`/bookings?status=completed&startDate=${today}&endDate=${today}`, {}, 'provider');
-
-            if (todayData.success) {
-                const completedToday = todayData.data.bookings.length;
-                const todayEarnings = todayData.data.bookings.reduce(
-                    (sum: number, b: Booking) => sum + b.service.price,
-                    0
-                );
-
-                setStats(prev => ({
-                    ...prev,
-                    completedToday,
-                    todayEarnings,
-                    todayBookings: completedToday,
-                }));
-            }
-
-            // Calculate week/month earnings would require more API calls
-            // For now, using mock data - implement proper calculations in production
-            setStats(prev => ({
-                ...prev,
-                weekEarnings: prev.todayEarnings * 5, // Mock
-                monthEarnings: prev.todayEarnings * 20, // Mock
-            }));
-        } catch (error) {
-            console.error('Load stats error:', error);
-        }
-    };
-
-    const onRefresh = async () => {
-        setRefreshing(true);
-        await loadDashboardData();
-        setRefreshing(false);
-    };
-
-    const handleLogout = async () => {
-        await AsyncStorage.multiRemove(['customToken', 'idToken', 'user']);
-        router.replace('/login');
-    };
-
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#007AFF" />
-                <Text style={styles.loadingText}>Loading dashboard...</Text>
-            </View>
-        );
-    }
-
-    return (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                <TouchableOpacity onPress={() => router.push('/profile' as any)}>
-                    <View style={styles.profilePic}>
-                        {profile?.photoURL ? (
-                            <Image source={{ uri: profile.photoURL }} style={styles.profileImage} />
-                        ) : (
-                            <Ionicons name="person" size={24} color="#666" />
-                        )}
-                    </View>
-                </TouchableOpacity>
-                    <View style={styles.headerText}>
-                        <Text style={styles.greeting}>Welcome back,</Text>
-                        <Text style={styles.name}>{profile?.displayName || 'Hello'}</Text>
-                    </View>
-                </View>
-
-                <TouchableOpacity
-                    style={styles.notificationButton}
-                    onPress={() => router.push('/washer-notifications' as any)}
-                >
-                    {pendingRequests.length > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{pendingRequests.length}</Text>
-                        </View>
-                    )}
-                    <Ionicons name="notifications-outline" size={28} color="#000" />
-                </TouchableOpacity>
-            </View>
-
-            <ScrollView
-                style={styles.content}
-                contentContainerStyle={{ paddingBottom: 100 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            >
-                {/* Current Job Banner */}
-                {currentJob ? (
-                    <TouchableOpacity
-                        style={styles.currentJobBanner}
-                        onPress={() => router.push(`/washer-booking-details?id=${currentJob.id}` as any)}
-                    >
-                        <View style={styles.currentJobHeader}>
-                            <View style={styles.pulseIndicator} />
-                            <Text style={styles.currentJobTitle}>CURRENT JOB IN PROGRESS</Text>
-                        </View>
-
-                        <View style={styles.currentJobContent}>
-                            <View style={styles.currentJobInfo}>
-                                <Text style={styles.currentJobService}>{currentJob.service.name}</Text>
-                                <Text style={styles.currentJobCustomer}>{currentJob.customer.displayName}</Text>
-                                <Text style={styles.currentJobVehicle}>
-                                    {currentJob.vehicle.make} {currentJob.vehicle.model}
-                                </Text>
-                            </View>
-
-                            <View style={styles.currentJobActions}>
-                                <View style={styles.currentJobTime}>
-                                    <Ionicons name="time-outline" size={16} color="#FFF" />
-                                    <Text style={styles.currentJobTimeText}>
-                                        {currentJob.startedAt
-                                            ? `Started ${new Date(currentJob.startedAt).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}`
-                                            : 'In Progress'}
-                                    </Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={24} color="#FFF" />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-                ) : (
-                    <View style={styles.noJobBanner}>
-                        <Ionicons name="checkmark-circle-outline" size={48} color="#4CAF50" />
-                        <Text style={styles.noJobText}>No active job</Text>
-                        <Text style={styles.noJobSubtext}>New requests will appear here</Text>
-                    </View>
-                )}
-
-                {/* Stats Overview */}
-                <View style={styles.statsContainer}>
-                    <Text style={styles.sectionTitle}>Today's Performance</Text>
-
-                    <View style={styles.statsGrid}>
-                        <View style={styles.statCard}>
-                            <Ionicons name="cash-outline" size={32} color="#4CAF50" />
-                            <Text style={styles.statValue}>LKR {stats.todayEarnings.toLocaleString()}</Text>
-                            <Text style={styles.statLabel}>Earned Today</Text>
-                        </View>
-
-                        <View style={styles.statCard}>
-                            <Ionicons name="checkmark-circle-outline" size={32} color="#2196F3" />
-                            <Text style={styles.statValue}>{stats.completedToday}</Text>
-                            <Text style={styles.statLabel}>Completed</Text>
-                        </View>
-
-                        <View style={styles.statCard}>
-                            <Ionicons name="star-outline" size={32} color="#FFD700" />
-                            <Text style={styles.statValue}>{profile?.rating || 0}</Text>
-                            <Text style={styles.statLabel}>Rating</Text>
-                        </View>
-
-                        <View style={styles.statCard}>
-                            <Ionicons name="time-outline" size={32} color="#FF9800" />
-                            <Text style={styles.statValue}>{pendingRequests.length}</Text>
-                            <Text style={styles.statLabel}>New Requests</Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Earnings Summary */}
-                <View style={styles.earningsCard}>
-                    <View style={styles.earningsHeader}>
-                        <Text style={styles.sectionTitle}>Earnings</Text>
-                        <TouchableOpacity onPress={() => router.push('/washer-earnings' as any)}>
-                            <Text style={styles.viewAllText}>View All</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.earningsRow}>
-                        <View style={styles.earningItem}>
-                            <Text style={styles.earningLabel}>This Week</Text>
-                            <Text style={styles.earningValue}>
-                                LKR {stats.weekEarnings.toLocaleString()}
-                            </Text>
-                        </View>
-
-                        <View style={styles.earningDivider} />
-
-                        <View style={styles.earningItem}>
-                            <Text style={styles.earningLabel}>This Month</Text>
-                            <Text style={styles.earningValue}>
-                                LKR {stats.monthEarnings.toLocaleString()}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Pending Requests */}
-                {pendingRequests.length > 0 && (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>New Job Requests</Text>
-                            <TouchableOpacity onPress={() => router.push('/washer-requests')}>
-                                <Text style={styles.viewAllText}>View All ({pendingRequests.length})</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {pendingRequests.slice(0, 3).map((request) => (
-                            <TouchableOpacity
-                                key={request.id}
-                                style={styles.requestCard}
-                                onPress={() => router.push(`/washer-job-request?id=${request.id}`)}
-                            >
-                                <View style={styles.requestHeader}>
-                                    <View>
-                                        <Text style={styles.requestService}>{request.service.name}</Text>
-                                        <Text style={styles.requestCustomer}>{request.customer.displayName}</Text>
-                                    </View>
-                                    <View style={styles.requestPriceContainer}>
-                                        <Text style={styles.requestPrice}>
-                                            LKR {request.service.price.toLocaleString()}
-                                        </Text>
-                                        <Text style={styles.requestDuration}>~{request.service.duration} min</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.requestFooter}>
-                                    <View style={styles.requestInfo}>
-                                        <Ionicons name="calendar-outline" size={14} color="#666" />
-                                        <Text style={styles.requestInfoText}>
-                                            {request.scheduledDate} at {request.scheduledTime}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.requestInfo}>
-                                        <Ionicons name="location-outline" size={14} color="#666" />
-                                        <Text style={styles.requestInfoText}>{request.address.city}</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.requestActions}>
-                                    <TouchableOpacity
-                                        style={styles.acceptButton}
-                                        onPress={(e) => {
-                                            e.stopPropagation();
-                                            router.push(`/washer-job-request?id=${request.id}&action=accept`);
-                                        }}
-                                    >
-                                        <Text style={styles.acceptButtonText}>Accept</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={styles.declineButton}
-                                        onPress={(e) => {
-                                            e.stopPropagation();
-                                            router.push(`/washer-job-request?id=${request.id}&action=decline`);
-                                        }}
-                                    >
-                                        <Text style={styles.declineButtonText}>Decline</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )}
-
-                {/* Next Booking */}
-                {nextBooking && !currentJob && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Next Scheduled Job</Text>
-
-                        <TouchableOpacity
-                            style={styles.nextBookingCard}
-                            onPress={() => router.push(`/washer-booking-details?id=${nextBooking.id}` as any)}
-                        >
-                            <View style={styles.nextBookingHeader}>
-                                <View>
-                                    <Text style={styles.nextBookingService}>{nextBooking.service.name}</Text>
-                                    <Text style={styles.nextBookingCustomer}>
-                                        {nextBooking.customer.displayName}
-                                    </Text>
-                                </View>
-                                <View style={styles.nextBookingPrice}>
-                                    <Text style={styles.nextBookingPriceText}>
-                                        LKR {nextBooking.service.price.toLocaleString()}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.nextBookingDetails}>
-                                <View style={styles.nextBookingDetail}>
-                                    <Ionicons name="calendar" size={18} color="#007AFF" />
-                                    <Text style={styles.nextBookingDetailText}>
-                                        {nextBooking.scheduledDate}
-                                    </Text>
-                                </View>
-
-                                <View style={styles.nextBookingDetail}>
-                                    <Ionicons name="time" size={18} color="#007AFF" />
-                                    <Text style={styles.nextBookingDetailText}>
-                                        {nextBooking.scheduledTime}
-                                    </Text>
-                                </View>
-
-                                <View style={styles.nextBookingDetail}>
-                                    <Ionicons name="location" size={18} color="#007AFF" />
-                                    <Text style={styles.nextBookingDetailText}>
-                                        {nextBooking.address.label}
-                                    </Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                <View style={{ height: 20 }} />
-            </ScrollView>
-
-            {/* Quick Actions — Fixed Bottom Bar */}
-            <View style={styles.quickActionsBar}>
-                <TouchableOpacity
-                    style={styles.quickActionItem}
-                    onPress={() => router.push('/washer-bookings' as any)}
-                >
-                    <Ionicons name="calendar-outline" size={24} color="#007AFF" />
-                    <Text style={styles.quickActionLabel}>Bookings</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.quickActionItem}
-                    onPress={() => router.push('/washer-earnings' as any)}
-                >
-                    <Ionicons name="stats-chart-outline" size={24} color="#007AFF" />
-                    <Text style={styles.quickActionLabel}>Earnings</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.quickActionItem}
-                    onPress={() => router.push('/washer-reviews' as any)}
-                >
-                    <Ionicons name="star-outline" size={24} color="#007AFF" />
-                    <Text style={styles.quickActionLabel}>Reviews</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.quickActionItem}
-                    onPress={() => router.push('/profile' as any)}
-                >
-                    <Ionicons name="person-outline" size={24} color="#007AFF" />
-                    <Text style={styles.quickActionLabel}>Profile</Text>
-                </TouchableOpacity>
-            </View>
->>>>>>> bba8704429d380204cdacdf03b5a35cea2da5f17
         </View>
     );
 }
@@ -526,6 +64,7 @@ export default function WasherHome() {
     const [loading, setLoading] = useState(true);
     const [accepting, setAccepting] = useState<string | null>(null);
 
+    // ── Fetch pending bookings from Firestore ────────────
     useEffect(() => {
         const q = query(
             collection(db, 'bookings'),
@@ -558,6 +97,7 @@ export default function WasherHome() {
         return () => unsubscribe();
     }, []);
 
+    // ── Accept Job ───────────────────────────────────────
     const handleAcceptJob = async (jobId: string) => {
         try {
             setAccepting(jobId);
@@ -581,7 +121,7 @@ export default function WasherHome() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
+                {/* ── Header ── */}
                 <View style={styles.header}>
                     <View style={styles.headerTop}>
                         <View>
@@ -614,7 +154,7 @@ export default function WasherHome() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Stats Grid */}
+                {/* ── Stats Grid ── */}
                 <View style={styles.statsGrid}>
                     {[
                         { icon: 'star', color: '#f59e0b', value: '4.8', label: 'Rating' },
@@ -629,7 +169,7 @@ export default function WasherHome() {
                     ))}
                 </View>
 
-                {/* Available Jobs */}
+                {/* ── Available Jobs ── */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Available Jobs</Text>
@@ -719,7 +259,7 @@ export default function WasherHome() {
                 </View>
             </ScrollView>
 
-            {/* Bottom Navigation */}
+            {/* ── Bottom Navigation ── */}
             <View style={styles.bottomNav}>
                 {[
                     { key: 'home', icon: 'home-outline', label: 'Home' },
