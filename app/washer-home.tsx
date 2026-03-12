@@ -1,4 +1,5 @@
 import { apiFetch } from '@/services/apiClient';
+import { getProfileFromFirebase } from '@/services/authService';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -18,6 +19,8 @@ import {
 interface WasherProfile {
     uid: string;
     displayName: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     phoneNumber: string;
     photoURL?: string;
@@ -116,7 +119,26 @@ export default function WasherHomeScreen() {
             const data = await apiFetch('/auth/washer/profile', {}, 'provider');
 
             if (data.success) {
-                setProfile(data.provider);
+                let profileData = data.provider;
+
+                // Fetch full profile from Firestore to get firstName/lastName
+                if (profileData?.uid) {
+                    try {
+                        const firestoreProfile = await getProfileFromFirebase(profileData.uid, 'provider');
+                        if (firestoreProfile) {
+                            profileData = {
+                                ...profileData,
+                                firstName: firestoreProfile.firstName,
+                                lastName: firestoreProfile.lastName,
+                                displayName: firestoreProfile.displayName || profileData.displayName,
+                            };
+                        }
+                    } catch (err) {
+                        console.warn('Could not fetch profile from Firestore:', err);
+                    }
+                }
+
+                setProfile(profileData);
             }
         } catch (error) {
             console.error('Load profile error:', error);
@@ -241,7 +263,7 @@ export default function WasherHomeScreen() {
                 </TouchableOpacity>
                     <View style={styles.headerText}>
                         <Text style={styles.greeting}>Welcome back,</Text>
-                        <Text style={styles.name}>{profile?.displayName || 'Washer'}</Text>
+                        <Text style={styles.name}>{profile?.displayName || 'Hello'}</Text>
                     </View>
                 </View>
 

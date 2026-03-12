@@ -1,4 +1,5 @@
 import { apiFetch } from '@/services/apiClient';
+import { getProfileFromFirebase } from '@/services/authService';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Href, useRouter } from 'expo-router';
@@ -27,6 +28,8 @@ interface User {
   uid: string;
   email: string;
   displayName: string;
+  firstName?: string;
+  lastName?: string;
   photoURL?: string;
 }
 
@@ -113,8 +116,29 @@ export default function CustomerHomeScreen() {
 
       // Load user from storage (AuthService saves under 'customer' or 'provider')
       const userData = await SecureStore.getItemAsync('customer');
+      let parsedUser: User | null = null;
       if (userData) {
-        setUser(JSON.parse(userData));
+        parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+      }
+
+      // Fetch full profile from Firestore to get firstName/lastName
+      if (parsedUser?.uid) {
+        try {
+          const profile = await getProfileFromFirebase(parsedUser.uid, 'customer');
+          if (profile) {
+            const updatedUser = {
+              ...parsedUser,
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+              displayName: profile.displayName || parsedUser.displayName,
+              photoURL: profile.photoURL || parsedUser.photoURL,
+            };
+            setUser(updatedUser as User);
+          }
+        } catch (err) {
+          console.warn('Could not fetch profile from Firestore:', err);
+        }
       }
 
       // Load all data in parallel
@@ -199,7 +223,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Hello,</Text>
-            <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
+            <Text style={styles.userName}>{user?.displayName || 'Hello'}</Text>
           </View>
           <TouchableOpacity onPress={() => router.push('/profile' as Href)}>
             <View style={styles.profilePic}>
