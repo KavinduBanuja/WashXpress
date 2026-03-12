@@ -128,7 +128,7 @@ export default function WasherHome() {
                             <Text style={styles.welcomeText}>Welcome back</Text>
                             <Text style={styles.providerName}>Indrajith</Text>
                         </View>
-                        <TouchableOpacity style={styles.profileBtn}>
+                        <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile' as any)}>
                             <Ionicons name="person-outline" size={22} color="#fff" />
                         </TouchableOpacity>
                     </View>
@@ -271,7 +271,13 @@ export default function WasherHome() {
                     <TouchableOpacity
                         key={tab.key}
                         style={styles.navItem}
-                        onPress={() => setActiveTab(tab.key)}
+                        onPress={() => {
+                            if (tab.key === 'profile') {
+                                router.push('/profile' as any);
+                            } else {
+                                setActiveTab(tab.key);
+                            }
+                        }}
                     >
                         <Ionicons
                             name={tab.icon as any}
