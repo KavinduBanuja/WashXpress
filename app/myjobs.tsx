@@ -260,58 +260,84 @@ export default function MyJobs() {
 }
 
 const s = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: '#f9fafb' },
-    scroll: { flex: 1 },
-    scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
-    header: { backgroundColor: '#16a34a', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
-    backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-    headerCenter: { flex: 1, alignItems: 'center' },
-    headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-    headerSub: { color: '#dcfce7', fontSize: 12, marginTop: 1 },
-    statsRow: { flexDirection: 'row', gap: 10, marginTop: 16, marginBottom: 4 },
-    statCard: { flex: 1, borderRadius: 16, padding: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
-    statNum: { fontSize: 20, fontWeight: '800', marginTop: 4 },
-    statLabel: { fontSize: 11, color: '#6b7280', marginTop: 2 },
-    routeBtn: { backgroundColor: '#16a34a', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', marginTop: 14, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 },
-    routeBtnTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-    routeBtnSub: { color: '#dcfce7', fontSize: 12, marginTop: 2 },
-    sectionTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginTop: 20, marginBottom: 10 },
-    emptyCard: { backgroundColor: '#fff', borderRadius: 16, padding: 32, alignItems: 'center', marginBottom: 10 },
-    emptyTitle: { fontSize: 15, fontWeight: '600', color: '#6b7280', marginTop: 10 },
-    emptySubtitle: { fontSize: 13, color: '#9ca3af', marginTop: 4, textAlign: 'center' },
-    jobCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
-    jobCardToday: { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    cardLeft: { flex: 1 },
-    nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 },
-    jobName: { fontSize: 16, fontWeight: '700', color: '#111827' },
-    jobVehicle: { fontSize: 13, color: '#6b7280', marginBottom: 4 },
-    phoneRow: { flexDirection: 'row', alignItems: 'center' },
-    phoneText: { fontSize: 13, color: '#16a34a', fontWeight: '500', marginLeft: 4 },
-    cardRight: { alignItems: 'flex-end' },
-    jobAmount: { fontSize: 22, fontWeight: '800', color: '#16a34a' },
-    jobDistance: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
-    serviceBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdf4', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, marginBottom: 10, alignSelf: 'flex-start' },
-    serviceText: { fontSize: 13, color: '#16a34a', fontWeight: '600' },
-    details: { gap: 5, marginBottom: 12 },
-    detailRow: { flexDirection: 'row', alignItems: 'center' },
-    detailText: { fontSize: 13, color: '#6b7280', marginLeft: 6, flex: 1 },
-    todayNotice: { backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 8, paddingVertical: 6, alignItems: 'center', marginBottom: 12 },
-    todayNoticeText: { fontSize: 13, color: '#15803d', fontWeight: '600' },
-    actionRow: { flexDirection: 'row', gap: 10 },
-    dirBtn: { flex: 1, flexDirection: 'row', backgroundColor: '#16a34a', borderRadius: 10, paddingVertical: 11, justifyContent: 'center', alignItems: 'center' },
-    detailBtn: { flex: 1, flexDirection: 'row', backgroundColor: '#15803d', borderRadius: 10, paddingVertical: 11, justifyContent: 'center', alignItems: 'center' },
-    actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-    completedMeta: { fontSize: 12, color: '#9ca3af', marginTop: 8 },
-    paidBadge: { backgroundColor: '#dcfce7', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 },
-    paidText: { color: '#16a34a', fontSize: 11, fontWeight: '600' },
-    tipCard: { flexDirection: 'row', backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fde68a', borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 16, alignItems: 'flex-start' },
-    tipIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fef3c7', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-    tipContent: { flex: 1 },
-    tipTitle: { fontSize: 15, fontWeight: '700', color: '#92400e', marginBottom: 4 },
-    tipBody: { fontSize: 13, color: '#b45309', lineHeight: 19 },
-    bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f3f4f6', flexDirection: 'row', paddingBottom: 20, paddingTop: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 10 },
-    navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    navLabel: { fontSize: 10, color: '#9ca3af', marginTop: 3, fontWeight: '500' },
-    navLabelActive: { color: '#16a34a', fontWeight: '600' },
-});
+    safe:             { flex: 1, backgroundColor: '#0d1629' },
+    scroll:           { flex: 1 },
+    scrollContent:    { paddingHorizontal: 16, paddingBottom: 100 },
+  
+    // Header
+    header:           { backgroundColor: '#0d1629', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+    backBtn:          { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+    headerCenter:     { flex: 1, alignItems: 'center' },
+    headerTitle:      { color: '#fff', fontSize: 18, fontWeight: '700' },
+    headerSub:        { color: '#93c5fd', fontSize: 12, marginTop: 1 },
+  
+    // Stats
+    statsRow:         { flexDirection: 'row', gap: 10, marginTop: 16, marginBottom: 4 },
+    statCard:         { flex: 1, backgroundColor: '#1e2d4a', borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 2 },
+    statNum:          { fontSize: 20, fontWeight: '800', marginTop: 4, color: '#2563eb' },
+    statLabel:        { fontSize: 11, color: '#64748b', marginTop: 2 },
+  
+    // Route CTA
+    routeBtn:         { backgroundColor: '#2563eb', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', marginTop: 14, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 },
+    routeBtnTitle:    { color: '#fff', fontSize: 15, fontWeight: '700' },
+    routeBtnSub:      { color: '#bfdbfe', fontSize: 12, marginTop: 2 },
+  
+    // Section
+    sectionTitle:     { fontSize: 17, fontWeight: '700', color: '#fff', marginTop: 20, marginBottom: 10 },
+  
+    // Empty
+    emptyCard:        { backgroundColor: '#1e2d4a', borderRadius: 16, padding: 32, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+    emptyTitle:       { fontSize: 15, fontWeight: '600', color: '#94a3b8', marginTop: 10 },
+    emptySubtitle:    { fontSize: 13, color: '#64748b', marginTop: 4, textAlign: 'center' },
+  
+    // Job Card
+    jobCard:          { backgroundColor: '#1e2d4a', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 },
+    jobCardToday:     { backgroundColor: '#1a3a2a', borderColor: 'rgba(37,99,235,0.3)' },
+    cardHeader:       { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+    cardLeft:         { flex: 1 },
+    nameRow:          { flexDirection: 'row', alignItems: 'center', marginBottom: 3 },
+    jobName:          { fontSize: 16, fontWeight: '700', color: '#fff' },
+    jobVehicle:       { fontSize: 13, color: '#64748b', marginBottom: 4 },
+    phoneRow:         { flexDirection: 'row', alignItems: 'center' },
+    phoneText:        { fontSize: 13, color: '#60a5fa', fontWeight: '500', marginLeft: 4 },
+    cardRight:        { alignItems: 'flex-end' },
+    jobAmount:        { fontSize: 22, fontWeight: '800', color: '#2563eb' },
+    jobDistance:      { fontSize: 12, color: '#64748b', marginTop: 2 },
+  
+    // Service Box
+    serviceBox:       { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(37,99,235,0.15)', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, marginBottom: 10, alignSelf: 'flex-start' },
+    serviceText:      { fontSize: 13, color: '#60a5fa', fontWeight: '600' },
+  
+    // Details
+    details:          { gap: 5, marginBottom: 12 },
+    detailRow:        { flexDirection: 'row', alignItems: 'center' },
+    detailText:       { fontSize: 13, color: '#94a3b8', marginLeft: 6, flex: 1 },
+  
+    // Today notice
+    todayNotice:      { backgroundColor: 'rgba(37,99,235,0.15)', borderWidth: 1, borderColor: 'rgba(37,99,235,0.3)', borderRadius: 8, paddingVertical: 6, alignItems: 'center', marginBottom: 12 },
+    todayNoticeText:  { fontSize: 13, color: '#60a5fa', fontWeight: '600' },
+  
+    // Action buttons
+    actionRow:        { flexDirection: 'row', gap: 10 },
+    dirBtn:           { flex: 1, flexDirection: 'row', backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 11, justifyContent: 'center', alignItems: 'center' },
+    detailBtn:        { flex: 1, flexDirection: 'row', backgroundColor: '#1d4ed8', borderRadius: 10, paddingVertical: 11, justifyContent: 'center', alignItems: 'center' },
+    actionBtnText:    { color: '#fff', fontWeight: '700', fontSize: 13 },
+  
+    // Completed
+    completedMeta:    { fontSize: 12, color: '#64748b', marginTop: 8 },
+    paidBadge:        { backgroundColor: 'rgba(37,99,235,0.15)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 },
+    paidText:         { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
+  
+    // Pro Tip
+    tipCard:          { flexDirection: 'row', backgroundColor: 'rgba(234,179,8,0.08)', borderWidth: 1, borderColor: 'rgba(234,179,8,0.2)', borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 16, alignItems: 'flex-start' },
+    tipIcon:          { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(234,179,8,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    tipContent:       { flex: 1 },
+    tipTitle:         { fontSize: 15, fontWeight: '700', color: '#fbbf24', marginBottom: 4 },
+    tipBody:          { fontSize: 13, color: '#d97706', lineHeight: 19 },
+  
+    // Bottom Nav
+    bottomNav:        { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0d1629', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', flexDirection: 'row', paddingBottom: 20, paddingTop: 10, elevation: 10 },
+    navItem:          { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    navLabel:         { fontSize: 10, color: '#64748b', marginTop: 3, fontWeight: '500' },
+    navLabelActive:   { color: '#2563eb', fontWeight: '600' },
+  });
