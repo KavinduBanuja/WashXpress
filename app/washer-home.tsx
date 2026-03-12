@@ -126,10 +126,21 @@ export default function WasherHome() {
               <Text style={styles.welcomeText}>Welcome back</Text>
               <Text style={styles.providerName}>Indrajith</Text>
             </View>
-            <TouchableOpacity style={styles.profileBtn}>
-              <Ionicons name="person-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
+
+            <ScrollView
+                style={styles.content}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
+                {/* Current Job Banner */}
+                {currentJob ? (
+                    <TouchableOpacity
+                        style={styles.currentJobBanner}
+                        onPress={() => router.push(`/washer-booking-details?id=${currentJob.id}` as any)}
+                    >
+                        <View style={styles.currentJobHeader}>
+                            <View style={styles.pulseIndicator} />
+                            <Text style={styles.currentJobTitle}>CURRENT JOB IN PROGRESS</Text>
+                        </View>
 
           {/* Earnings Card */}
           <TouchableOpacity style={styles.earningsCard} activeOpacity={0.85}>
@@ -217,64 +228,124 @@ export default function WasherHome() {
                 </View>
               </View>
 
-              {/* Accept Button */}
-              <TouchableOpacity
-                style={styles.acceptBtn}
-                activeOpacity={0.8}
-                onPress={() => handleAcceptJob(job.id)}
-              >
-                <Text style={styles.acceptBtnText}>Accept Job</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+                                <View style={styles.requestActions}>
+                                    <TouchableOpacity
+                                        style={styles.acceptButton}
+                                        onPress={(e) => {
+                                            e.stopPropagation();
+                                            router.push(`/washer-job-request?id=${request.id}&action=accept`);
+                                        }}
+                                    >
+                                        <Text style={styles.acceptButtonText}>Accept</Text>
+                                    </TouchableOpacity>
 
-          {/* Pro Tip Card */}
-          <View style={styles.proTipCard}>
-            <View style={styles.proTipIcon}>
-              <Ionicons name="star" size={22} color="#d97706" />
-            </View>
-            <View style={styles.proTipContent}>
-              <Text style={styles.proTipTitle}>Pro Tip</Text>
-              <Text style={styles.proTipBody}>
-                Jobs with Priority or VIP badges pay 15–30% more! Accept them quickly before they're taken.
-              </Text>
-            </View>
-          </View>
+                                    <TouchableOpacity
+                                        style={styles.declineButton}
+                                        onPress={(e) => {
+                                            e.stopPropagation();
+                                            router.push(`/washer-job-request?id=${request.id}&action=decline`);
+                                        }}
+                                    >
+                                        <Text style={styles.declineButtonText}>Decline</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+
+                {/* Next Booking */}
+                {nextBooking && !currentJob && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Next Scheduled Job</Text>
+
+                        <TouchableOpacity
+                            style={styles.nextBookingCard}
+                            onPress={() => router.push(`/washer-booking-details?id=${nextBooking.id}` as any)}
+                        >
+                            <View style={styles.nextBookingHeader}>
+                                <View>
+                                    <Text style={styles.nextBookingService}>{nextBooking.service.name}</Text>
+                                    <Text style={styles.nextBookingCustomer}>
+                                        {nextBooking.customer.displayName}
+                                    </Text>
+                                </View>
+                                <View style={styles.nextBookingPrice}>
+                                    <Text style={styles.nextBookingPriceText}>
+                                        LKR {nextBooking.service.price.toLocaleString()}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.nextBookingDetails}>
+                                <View style={styles.nextBookingDetail}>
+                                    <Ionicons name="calendar" size={18} color="#007AFF" />
+                                    <Text style={styles.nextBookingDetailText}>
+                                        {nextBooking.scheduledDate}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.nextBookingDetail}>
+                                    <Ionicons name="time" size={18} color="#007AFF" />
+                                    <Text style={styles.nextBookingDetailText}>
+                                        {nextBooking.scheduledTime}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.nextBookingDetail}>
+                                    <Ionicons name="location" size={18} color="#007AFF" />
+                                    <Text style={styles.nextBookingDetailText}>
+                                        {nextBooking.address.label}
+                                    </Text>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Quick Actions */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Quick Actions</Text>
+
+                    <View style={styles.quickActionsGrid}>
+                        <TouchableOpacity
+                            style={styles.quickActionCard}
+                            onPress={() => router.push('/washer-bookings' as any)}
+                        >
+                            <Ionicons name="calendar-outline" size={32} color="#007AFF" />
+                            <Text style={styles.quickActionText}>My Bookings</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.quickActionCard}
+                            onPress={() => router.push('/washer-earnings' as any)}
+                        >
+                            <Ionicons name="stats-chart-outline" size={32} color="#007AFF" />
+                            <Text style={styles.quickActionText}>Earnings</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.quickActionCard}
+                            onPress={() => router.push('/washer-reviews' as any)}
+                        >
+                            <Ionicons name="star-outline" size={32} color="#007AFF" />
+                            <Text style={styles.quickActionText}>Reviews</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.quickActionCard}
+                            onPress={() => router.push('/profile' as any)}
+                        >
+                            <Ionicons name="person-outline" size={32} color="#007AFF" />
+                            <Text style={styles.quickActionText}>Profile</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <View style={{ height: 40 }} />
+            </ScrollView>
         </View>
-      </ScrollView>
-
-      {/* ── Bottom Navigation ── */}
-      <View style={styles.bottomNav}>
-        {[
-          { key: 'home', icon: 'home', label: 'Home' },
-          { key: 'jobs', icon: 'briefcase-outline', label: 'My Jobs' },
-          { key: 'earnings', icon: 'cash-outline', label: 'Earnings' },
-          { key: 'shop', icon: 'cart-outline', label: 'Shop' },
-          { key: 'profile', icon: 'person-outline', label: 'Profile' },
-        ].map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={styles.navItem}
-            onPress={() => setActiveTab(tab.key)}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={22}
-              color={activeTab === tab.key ? '#16a34a' : '#9ca3af'}
-            />
-            <Text
-              style={[
-                styles.navLabel,
-                activeTab === tab.key && styles.navLabelActive,
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </SafeAreaView>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
@@ -534,73 +605,94 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Pro Tip Card
-  proTipCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fffbeb',
-    borderWidth: 1,
-    borderColor: '#fde68a',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 4,
-    marginBottom: 16,
-    alignItems: 'flex-start',
-  },
-  proTipIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fef3c7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  proTipContent: {
-    flex: 1,
-  },
-  proTipTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#92400e',
-    marginBottom: 4,
-  },
-  proTipBody: {
-    fontSize: 13,
-    color: '#b45309',
-    lineHeight: 19,
-  },
+    // Next Booking
+    nextBookingCard: {
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        padding: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: '#007AFF',
+    },
+    nextBookingHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+    },
+    nextBookingService: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#000',
+    },
+    nextBookingCustomer: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
+    nextBookingPrice: {
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    nextBookingPriceText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+    },
+    nextBookingDetails: {
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+        paddingTop: 16,
+    },
+    nextBookingDetail: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    nextBookingDetailText: {
+        fontSize: 14,
+        color: '#666',
+        marginLeft: 12,
+    },
 
-  // Bottom Nav
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    flexDirection: 'row',
-    paddingBottom: 20,
-    paddingTop: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navLabel: {
-    fontSize: 10,
-    color: '#9ca3af',
-    marginTop: 3,
-    fontWeight: '500',
-  },
-  navLabelActive: {
-    color: '#16a34a',
-    fontWeight: '600',
-  },
+    // Quick Actions
+    quickActionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    quickActionCard: {
+        width: '48%',
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        padding: 20,
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    quickActionText: {
+        fontSize: 14,
+        color: '#000',
+        marginTop: 12,
+        fontWeight: '500',
+    },
+
+    // Logout
+    logoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 20,
+        marginTop: 12,
+        padding: 16,
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#FF3B30',
+    },
+    logoutText: {
+        fontSize: 16,
+        color: '#FF3B30',
+        marginLeft: 8,
+        fontWeight: '600',
+    },
 });
