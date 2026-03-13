@@ -293,8 +293,14 @@ export default function SubscriptionsScreen() {
           custom_1: data.data.subscriptionId,
           custom_2: '',
         },
-        () => {
+        async () => {
           // Success
+          try {
+            await apiFetch(`/subscriptions/${data.data.subscriptionId}/activate`, { method: 'PATCH' }, 'customer');
+          } catch (e) {
+            console.error('Failed to activate plan via fallback', e);
+          }
+
           setPaying(false);
           Alert.alert(
             cancelExistingId ? '🔄 Plan Changed!' : '🎉 Subscription Activated!',
