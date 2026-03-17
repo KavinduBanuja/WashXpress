@@ -1,16 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-    View, Text, ScrollView, TouchableOpacity, StyleSheet,
-    SafeAreaView, StatusBar, ActivityIndicator, Alert,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator, Alert,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { db } from '../firebaseConfig';
+
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useProfile } from '../hooks/useProfile';
 import { apiFetch } from '../services/apiClient';
-import { useTheme } from '../context/ThemeContext';
+
+const userProfile = useProfile();
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type BookingDoc = {
@@ -65,10 +74,10 @@ function formatPrice(price: number, currency: string, paidWithSubscription: bool
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
-    'exterior-wash':  '🚿',
+    'exterior-wash': '🚿',
     'interior-clean': '🧹',
-    'tire-cleaning':  '⚙️',
-    'full-detail':    '✨',
+    'tire-cleaning': '⚙️',
+    'full-detail': '✨',
 };
 
 const TYPE_ICONS: Record<string, string> = {
@@ -81,7 +90,7 @@ const TYPE_ICONS: Record<string, string> = {
 export default function WasherHome() {
     const router = useRouter();
     const { user } = useAuth();
-    const { data: profile, isLoading: profileLoading } = useProfile();
+    const { data: washerProfile, isLoading: profileLoading } = useProfile();
     const { colors, isDark } = useTheme();
     const [activeTab, setActiveTab] = useState('home');
     const [bookings, setBookings] = useState<BookingDoc[]>([]);
@@ -90,9 +99,17 @@ export default function WasherHome() {
 
     // ── Live Firestore listener on pending bookings ───────────────────────────
     useEffect(() => {
+        if (!washerProfile?.serviceAreas || washerProfile.serviceAreas.length === 0) {
+            setLoading(false);
+            return;
+        }
+
+        const areas = washerProfile.serviceAreas.slice(0, 30); // Firestore 'in' max is 30
+
         const q = query(
             collection(db, 'bookings'),
-            where('status', '==', 'pending')
+            where('status', '==', 'pending'),
+            where('district', 'in', areas)
         );
 
         const unsubscribe = onSnapshot(
@@ -103,7 +120,6 @@ export default function WasherHome() {
                     ...(d.data() as Omit<BookingDoc, 'id'>),
                 }));
 
-                // Sort soonest scheduled date/time first
                 fetched.sort((a, b) => {
                     if (a.scheduledDate !== b.scheduledDate)
                         return a.scheduledDate > b.scheduledDate ? 1 : -1;
@@ -120,7 +136,7 @@ export default function WasherHome() {
         );
 
         return () => unsubscribe();
-    }, []);
+    }, [washerProfile?.serviceAreas]);
 
     // ── Quick-accept directly from home card ─────────────────────────────────
     const handleAcceptJob = useCallback(async (bookingId: string) => {
@@ -154,10 +170,10 @@ export default function WasherHome() {
 
     const getUserName = () => {
         if (profileLoading) return '...';
-        if (profile?.displayName) return profile.displayName;
+        if (washerProfile?.displayName) return washerProfile.displayName;
         if (user?.displayName) return user.displayName;
-        if (profile?.firstName || profile?.lastName)
-            return `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+        if (washerProfile?.firstName || washerProfile?.lastName)
+            return `${washerProfile.firstName || ''} ${washerProfile.lastName || ''}`.trim();
         return 'Washer';
     };
 
@@ -187,8 +203,8 @@ export default function WasherHome() {
                     </View>
 
                     {/* Earnings Card */}
-                    <TouchableOpacity 
-                        style={[styles.earningsCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: colors.border }]} 
+                    <TouchableOpacity
+                        style={[styles.earningsCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: colors.border }]}
                         activeOpacity={0.85}
                     >
                         <View style={styles.earningsLeft}>
@@ -212,9 +228,9 @@ export default function WasherHome() {
                 {/* ── Stats Grid ── */}
                 <View style={styles.statsGrid}>
                     {[
-                        { icon: 'star',                    color: '#f59e0b', value: '—',                       label: 'Rating'    },
-                        { icon: 'calendar-outline',        color: colors.accent, value: String(bookings.length),   label: 'Available' },
-                        { icon: 'checkmark-circle-outline', color: colors.success || '#16a34a', value: '0',                      label: 'Completed' },
+                        { icon: 'star', color: '#f59e0b', value: '—', label: 'Rating' },
+                        { icon: 'calendar-outline', color: colors.accent, value: String(bookings.length), label: 'Available' },
+                        { icon: 'checkmark-circle-outline', color: colors.success || '#16a34a', value: '0', label: 'Completed' },
                     ].map((stat) => (
                         <View key={stat.label} style={[styles.statCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                             <Ionicons name={stat.icon as any} size={22} color={stat.color} />
@@ -279,20 +295,20 @@ export default function WasherHome() {
             {/* ── Bottom Navigation ── */}
             <View style={[styles.bottomNav, { backgroundColor: colors.cardBackground, borderTopColor: colors.border }]}>
                 {[
-                    { key: 'home',     icon: 'home-outline',     label: 'Home'     },
-                    { key: 'jobs',     icon: 'briefcase-outline', label: 'My Jobs'  },
-                    { key: 'earnings', icon: 'cash-outline',      label: 'Earnings' },
-                    { key: 'shop',     icon: 'cart-outline',      label: 'Shop'     },
-                    { key: 'profile',  icon: 'person-outline',    label: 'Profile'  },
+                    { key: 'home', icon: 'home-outline', label: 'Home' },
+                    { key: 'jobs', icon: 'briefcase-outline', label: 'My Jobs' },
+                    { key: 'earnings', icon: 'cash-outline', label: 'Earnings' },
+                    { key: 'shop', icon: 'cart-outline', label: 'Shop' },
+                    { key: 'profile', icon: 'person-outline', label: 'Profile' },
                 ].map((tab) => (
                     <TouchableOpacity
                         key={tab.key}
                         style={styles.navItem}
                         onPress={() => {
-                            if (tab.key === 'shop')         router.push('/marketplace' as any);
+                            if (tab.key === 'shop') router.push('/marketplace' as any);
                             else if (tab.key === 'profile') router.push('/profile' as any);
-                            else if (tab.key === 'jobs')    router.push('/myjobs' as any);
-                            else                            setActiveTab(tab.key);
+                            else if (tab.key === 'jobs') router.push('/myjobs' as any);
+                            else setActiveTab(tab.key);
                         }}
                     >
                         <Ionicons
@@ -301,7 +317,7 @@ export default function WasherHome() {
                             color={activeTab === tab.key ? colors.accent : colors.textSecondary}
                         />
                         <Text style={[
-                            styles.navLabel, 
+                            styles.navLabel,
                             { color: colors.textSecondary },
                             activeTab === tab.key && [styles.navLabelActive, { color: colors.accent }]
                         ]}>
@@ -429,95 +445,95 @@ function JobCard({
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    safe:              { flex: 1 },
-    scroll:            { flex: 1 },
-    scrollContent:     { paddingBottom: 90 },
+    safe: { flex: 1 },
+    scroll: { flex: 1 },
+    scrollContent: { paddingBottom: 90 },
 
     // Header
-    header:            { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30 },
-    headerTop:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    headerGreeting:    { flex: 1 },
-    welcomeText:       { fontSize: 14, marginBottom: 2 },
-    providerName:      { fontSize: 24, fontWeight: '700' },
-    profileBtn:        { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+    header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30 },
+    headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    headerGreeting: { flex: 1 },
+    welcomeText: { fontSize: 14, marginBottom: 2 },
+    providerName: { fontSize: 24, fontWeight: '700' },
+    profileBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
 
     // Earnings Card
-    earningsCard:      { borderRadius: 16, padding: 16, flexDirection: 'row', flexWrap: 'wrap', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4, borderWidth: 1 },
-    earningsLeft:      { flex: 1 },
-    earningsLabelRow:  { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-    earningsLabel:     { fontSize: 12, fontWeight: '500' },
-    earningsAmount:    { fontSize: 28, fontWeight: '800', marginBottom: 4 },
-    trendRow:          { flexDirection: 'row', alignItems: 'center' },
-    trendText:         { fontSize: 12, fontWeight: '500' },
-    earningsRight:     { alignItems: 'center', justifyContent: 'center', paddingLeft: 16 },
-    jobsDoneCount:     { fontSize: 32, fontWeight: '800' },
-    jobsDoneLabel:     { fontSize: 12, fontWeight: '500' },
-    earningsTap:       { width: '100%', textAlign: 'center', marginTop: 10, fontSize: 12 },
+    earningsCard: { borderRadius: 16, padding: 16, flexDirection: 'row', flexWrap: 'wrap', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4, borderWidth: 1 },
+    earningsLeft: { flex: 1 },
+    earningsLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    earningsLabel: { fontSize: 12, fontWeight: '500' },
+    earningsAmount: { fontSize: 28, fontWeight: '800', marginBottom: 4 },
+    trendRow: { flexDirection: 'row', alignItems: 'center' },
+    trendText: { fontSize: 12, fontWeight: '500' },
+    earningsRight: { alignItems: 'center', justifyContent: 'center', paddingLeft: 16 },
+    jobsDoneCount: { fontSize: 32, fontWeight: '800' },
+    jobsDoneLabel: { fontSize: 12, fontWeight: '500' },
+    earningsTap: { width: '100%', textAlign: 'center', marginTop: 10, fontSize: 12 },
 
     // Stats Grid
-    statsGrid:         { flexDirection: 'row', paddingHorizontal: 16, marginTop: -20, gap: 10, marginBottom: 8 },
-    statCard:          { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2, borderWidth: 1 },
-    statValue:         { fontSize: 20, fontWeight: '700', marginTop: 6 },
-    statLabel:         { fontSize: 11, marginTop: 2 },
+    statsGrid: { flexDirection: 'row', paddingHorizontal: 16, marginTop: -20, gap: 10, marginBottom: 8 },
+    statCard: { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2, borderWidth: 1 },
+    statValue: { fontSize: 20, fontWeight: '700', marginTop: 6 },
+    statLabel: { fontSize: 11, marginTop: 2 },
 
     // Section
-    section:           { paddingHorizontal: 16, marginTop: 16 },
-    sectionHeader:     { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-    sectionTitle:      { fontSize: 18, fontWeight: '700' },
-    newBadge:          { marginLeft: 10, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
-    pulseDot:          { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' },
-    newBadgeText:      { fontSize: 12, fontWeight: '600' },
+    section: { paddingHorizontal: 16, marginTop: 16 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    sectionTitle: { fontSize: 18, fontWeight: '700' },
+    newBadge: { marginLeft: 10, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+    pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' },
+    newBadgeText: { fontSize: 12, fontWeight: '600' },
 
     // Loading / Empty
-    loadingBox:        { alignItems: 'center', paddingVertical: 40 },
-    loadingText:       { marginTop: 12, fontSize: 14 },
-    emptyBox:          { alignItems: 'center', paddingVertical: 40 },
-    emptyTitle:        { fontSize: 16, fontWeight: '600', marginTop: 12 },
-    emptySubtitle:     { fontSize: 13, marginTop: 4 },
+    loadingBox: { alignItems: 'center', paddingVertical: 40 },
+    loadingText: { marginTop: 12, fontSize: 14 },
+    emptyBox: { alignItems: 'center', paddingVertical: 40 },
+    emptyTitle: { fontSize: 16, fontWeight: '600', marginTop: 12 },
+    emptySubtitle: { fontSize: 13, marginTop: 4 },
 
     // Job Card
-    jobCard:           { borderRadius: 16, marginBottom: 12, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2, overflow: 'hidden' },
-    jobCardHeader:     { flexDirection: 'row', padding: 16, paddingBottom: 10 },
-    jobCardLeft:       { flex: 1 },
-    jobName:           { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-    vehicleRow:        { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-    vehicleEmoji:      { fontSize: 16 },
-    jobVehicle:        { fontSize: 13, fontWeight: '500' },
-    vehiclePlate:      { fontSize: 12 },
-    jobCardRight:      { alignItems: 'flex-end', gap: 6 },
-    jobAmount:         { fontSize: 20, fontWeight: '800' },
-    jobAmountSub:      { fontSize: 13 },
-    durationPill:      { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-    durationText:      { fontSize: 11, fontWeight: '500' },
+    jobCard: { borderRadius: 16, marginBottom: 12, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2, overflow: 'hidden' },
+    jobCardHeader: { flexDirection: 'row', padding: 16, paddingBottom: 10 },
+    jobCardLeft: { flex: 1 },
+    jobName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+    vehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+    vehicleEmoji: { fontSize: 16 },
+    jobVehicle: { fontSize: 13, fontWeight: '500' },
+    vehiclePlate: { fontSize: 12 },
+    jobCardRight: { alignItems: 'flex-end', gap: 6 },
+    jobAmount: { fontSize: 20, fontWeight: '800' },
+    jobAmountSub: { fontSize: 13 },
+    durationPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+    durationText: { fontSize: 11, fontWeight: '500' },
 
-    serviceBox:        { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10 },
-    serviceEmoji:      { fontSize: 15 },
-    serviceText:       { fontSize: 13, fontWeight: '600' },
+    serviceBox: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10 },
+    serviceEmoji: { fontSize: 15 },
+    serviceText: { fontSize: 13, fontWeight: '600' },
 
-    jobDetails:        { paddingHorizontal: 16, gap: 6, marginBottom: 10 },
-    detailRow:         { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    detailText:        { fontSize: 13 },
+    jobDetails: { paddingHorizontal: 16, gap: 6, marginBottom: 10 },
+    detailRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    detailText: { fontSize: 13 },
 
-    notesIndicator:    { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10, borderWidth: 1 },
+    notesIndicator: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10, borderWidth: 1 },
     notesIndicatorText: { fontSize: 12, fontWeight: '600' },
 
-    jobActions:        { flexDirection: 'row', gap: 10, padding: 16, paddingTop: 4 },
-    viewBtn:           { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, alignItems: 'center' },
-    viewBtnText:       { fontSize: 14, fontWeight: '700' },
-    acceptBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12 },
+    jobActions: { flexDirection: 'row', gap: 10, padding: 16, paddingTop: 4 },
+    viewBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, alignItems: 'center' },
+    viewBtnText: { fontSize: 14, fontWeight: '700' },
+    acceptBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12 },
     acceptBtnDisabled: { opacity: 0.6 },
-    acceptBtnText:     { fontSize: 14, fontWeight: '800', color: '#fff' },
+    acceptBtnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
 
     // Pro Tip Card
-    proTipCard:        { flexDirection: 'row', borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 16, alignItems: 'flex-start' },
-    proTipIcon:        { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-    proTipContent:     { flex: 1 },
-    proTipTitle:       { fontSize: 15, fontWeight: '700', marginBottom: 4 },
-    proTipBody:        { fontSize: 13, lineHeight: 19 },
+    proTipCard: { flexDirection: 'row', borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 16, alignItems: 'flex-start' },
+    proTipIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    proTipContent: { flex: 1 },
+    proTipTitle: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
+    proTipBody: { fontSize: 13, lineHeight: 19 },
 
     // Bottom Nav
-    bottomNav:         { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, flexDirection: 'row', paddingBottom: 20, paddingTop: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 10 },
-    navItem:           { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    navLabel:          { fontSize: 10, marginTop: 3, fontWeight: '500' },
-    navLabelActive:    { fontWeight: '600' },
+    bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, flexDirection: 'row', paddingBottom: 20, paddingTop: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 10 },
+    navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    navLabel: { fontSize: 10, marginTop: 3, fontWeight: '500' },
+    navLabelActive: { fontWeight: '600' },
 });
