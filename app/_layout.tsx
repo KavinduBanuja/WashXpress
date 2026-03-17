@@ -20,7 +20,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="customer-home" options={{ headerShown: false }} />
             <Stack.Screen name="Mentorship" />
             <Stack.Screen name="login" />
             <Stack.Screen name="signup" />
@@ -28,7 +28,6 @@ export default function RootLayout() {
             <Stack.Screen name="home" />
             <Stack.Screen name="washer-job-request" options={{ headerShown: false }} />
             <Stack.Screen name="washer-booking-details" options={{ headerShown: false }} />
-            <Stack.Screen name="customer-home" />
             <Stack.Screen name="provider-home" />
             <Stack.Screen name="washer-home" />
             <Stack.Screen name="complain-status" options={{ headerShown: false }} />
