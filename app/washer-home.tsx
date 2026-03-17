@@ -19,8 +19,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useProfile } from '../hooks/useProfile';
 import { apiFetch } from '../services/apiClient';
 
-const userProfile = useProfile();
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 type BookingDoc = {
     id: string;

@@ -78,11 +78,13 @@ export default function Index() {
               setDestination('/washer-pending');
             }
           } catch (error: any) {
-            console.error(`[Index] ❌ Provider profile fetch failed:`, error?.message);
-            // Backend doesn't recognize this provider (e.g. "User not found") — require re-login
-            await SecureStore.deleteItemAsync('accessToken');
-            await SecureStore.deleteItemAsync('userType');
-            await SecureStore.deleteItemAsync('provider');
+            console.error(`[Index] ❌ Provider profile fetch failed:`, error);
+            // Backend doesn't recognize this provider or network failed
+            await Promise.all([
+              SecureStore.deleteItemAsync('accessToken'),
+              SecureStore.deleteItemAsync('userType'),
+              SecureStore.deleteItemAsync('provider'),
+            ]);
             setDestination('/login');
           }
           return;

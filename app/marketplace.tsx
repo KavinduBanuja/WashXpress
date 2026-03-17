@@ -10,13 +10,13 @@ import {
     TextInput,
     Modal,
     Alert,
+    Image,
     FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 
-// ── Types ────────────────────────────────────────────────
 interface Product {
     id: string;
     name: string;
@@ -24,7 +24,7 @@ interface Product {
     price: number;
     rating: number;
     reviews: number;
-    emoji: string;
+    image: any;
     category: string;
     unit?: string;
 }
@@ -36,21 +36,21 @@ interface CartItem {
 
 // ── Mock Data ────────────────────────────────────────────
 const PRODUCTS: Product[] = [
-    { id: '1', name: 'Premium Car Wash Soap', description: 'pH-balanced formula, safe for all finishes', price: 24.99, rating: 4.8, reviews: 342, emoji: '🧴', category: 'Cleaning Solutions', unit: '1 Gallon' },
-    { id: '2', name: 'Ceramic Coating Spray', description: 'Long-lasting protection, hydrophobic finish', price: 39.99, rating: 4.9, reviews: 523, emoji: '✨', category: 'Cleaning Solutions', unit: '16 oz' },
-    { id: '3', name: 'Tire Shine Gel', description: 'Non-greasy formula, UV protection', price: 16.99, rating: 4.6, reviews: 287, emoji: '⚫', category: 'Cleaning Solutions', unit: '32 oz' },
-    { id: '4', name: 'Glass Cleaner Pro', description: 'Streak-free shine, ammonia-free', price: 12.99, rating: 4.7, reviews: 456, emoji: '🪟', category: 'Cleaning Solutions', unit: '24 oz' },
-    { id: '5', name: 'Interior Detailer Spray', description: 'All-surface cleaner, fresh scent', price: 18.99, rating: 4.5, reviews: 198, emoji: '🚗', category: 'Cleaning Solutions', unit: '20 oz' },
-    { id: '6', name: 'Dual Action Polisher', description: 'Variable speed, ergonomic design', price: 159.99, rating: 4.9, reviews: 678, emoji: '🔧', category: 'Equipment' },
-    { id: '7', name: 'Portable Pressure Washer', description: '2000 PSI, includes accessories', price: 249.99, rating: 4.8, reviews: 892, emoji: '💦', category: 'Equipment' },
-    { id: '8', name: 'Wet/Dry Vacuum', description: '6.5 HP, 16 gallon capacity', price: 189.99, rating: 4.7, reviews: 445, emoji: '🌪️', category: 'Equipment' },
-    { id: '9', name: 'Foam Cannon Pro', description: 'Adjustable spray pattern, fits most washers', price: 44.99, rating: 4.8, reviews: 734, emoji: '🫧', category: 'Equipment' },
-    { id: '10', name: 'Microfiber Towel Set', description: '20-pack premium quality, ultra-soft', price: 34.99, rating: 4.9, reviews: 1234, emoji: '🧽', category: 'Tools & Accessories', unit: '20 pack' },
-    { id: '11', name: 'Detailing Brush Kit', description: '10-piece set for all surfaces', price: 29.99, rating: 4.7, reviews: 567, emoji: '🖌️', category: 'Tools & Accessories', unit: '10 pieces' },
-    { id: '12', name: 'Foam Applicator Pads', description: 'Contoured design, 6-pack', price: 14.99, rating: 4.6, reviews: 389, emoji: '🟡', category: 'Tools & Accessories', unit: '6 pack' },
-    { id: '13', name: 'Wheel Brush Set', description: 'Long-reach design, soft bristles', price: 22.99, rating: 4.8, reviews: 445, emoji: '🪥', category: 'Tools & Accessories', unit: '3 pack' },
-    { id: '14', name: 'Paint Sealant', description: '6-month protection, UV resistant', price: 49.99, rating: 4.9, reviews: 678, emoji: '🛡️', category: 'Protection Products', unit: '12 oz' },
-    { id: '15', name: 'Leather Conditioner', description: 'Restores & protects, natural oils', price: 26.99, rating: 4.7, reviews: 423, emoji: '💺', category: 'Protection Products', unit: '16 oz' },
+    { id: '1', name: 'Premium Car Wash Soap', description: 'pH-balanced formula, safe for all finishes', price: 24.99, rating: 4.8, reviews: 342, image: require('../assets/marketplace/car_wash_soap.jpg'), category: 'Cleaning Solutions', unit: '1 Gallon' },
+    { id: '2', name: 'Ceramic Coating Spray', description: 'Long-lasting protection, hydrophobic finish', price: 39.99, rating: 4.9, reviews: 523, image: require('../assets/marketplace/Ceramic_coating_spray.avif'), category: 'Cleaning Solutions', unit: '16 oz' },
+    { id: '3', name: 'Tire Shine Gel', description: 'Non-greasy formula, UV protection', price: 16.99, rating: 4.6, reviews: 287, image: require('../assets/marketplace/tire_shining_gel.jpg'), category: 'Cleaning Solutions', unit: '32 oz' },
+    { id: '4', name: 'Glass Cleaner Pro', description: 'Streak-free shine, ammonia-free', price: 12.99, rating: 4.7, reviews: 456, image: require('../assets/marketplace/glass_cleaner_pro.png'), category: 'Cleaning Solutions', unit: '24 oz' },
+    { id: '5', name: 'Interior Detailer Spray', description: 'All-surface cleaner, fresh scent', price: 18.99, rating: 4.5, reviews: 198, image: require('../assets/marketplace/interior_detailer_spray.webp'), category: 'Cleaning Solutions', unit: '20 oz' },
+    { id: '6', name: 'Dual Action Polisher', description: 'Variable speed, ergonomic design', price: 159.99, rating: 4.9, reviews: 678, image: require('../assets/marketplace/dual_action_polisher.jpg'), category: 'Equipment' },
+    { id: '7', name: 'Portable Pressure Washer', description: '2000 PSI, includes accessories', price: 249.99, rating: 4.8, reviews: 892, image: require('../assets/marketplace/portable_pressure_washer.jpg'), category: 'Equipment' },
+    { id: '8', name: 'Wet/Dry Vacuum', description: '6.5 HP, 16 gallon capacity', price: 189.99, rating: 4.7, reviews: 445, image: require('../assets/marketplace/wet_dry_vacuum.jpg'), category: 'Equipment' },
+    { id: '9', name: 'Foam Cannon Pro', description: 'Adjustable spray pattern, fits most washers', price: 44.99, rating: 4.8, reviews: 734, image: require('../assets/marketplace/foam_cannon_pro.webp'), category: 'Equipment' },
+    { id: '10', name: 'Microfiber Towel Set', description: '20-pack premium quality, ultra-soft', price: 34.99, rating: 4.9, reviews: 1234, image: require('../assets/marketplace/microfiber_towel_set.jpg'), category: 'Tools & Accessories', unit: '20 pack' },
+    { id: '11', name: 'Detailing Brush Kit', description: '10-piece set for all surfaces', price: 29.99, rating: 4.7, reviews: 567, image: require('../assets/marketplace/detailing_brush_kit.jpg'), category: 'Tools & Accessories', unit: '10 pieces' },
+    { id: '12', name: 'Foam Applicator Pads', description: 'Contoured design, 6-pack', price: 14.99, rating: 4.6, reviews: 389, image: require('../assets/marketplace/foam_applicator_pads.jpg'), category: 'Tools & Accessories', unit: '6 pack' },
+    { id: '13', name: 'Wheel Brush Set', description: 'Long-reach design, soft bristles', price: 22.99, rating: 4.8, reviews: 445, image: require('../assets/marketplace/wheel_brush_set.png'), category: 'Tools & Accessories', unit: '3 pack' },
+    { id: '14', name: 'Paint Sealant', description: '6-month protection, UV resistant', price: 49.99, rating: 4.9, reviews: 678, image: require('../assets/marketplace/paint_sealent.png'), category: 'Protection Products', unit: '12 oz' },
+    { id: '15', name: 'Leather Conditioner', description: 'Restores & protects, natural oils', price: 26.99, rating: 4.7, reviews: 423, image: require('../assets/marketplace/leather_conditioner.jpg'), category: 'Protection Products', unit: '16 oz' },
 ];
 
 const CATEGORIES = [
@@ -119,8 +119,8 @@ export default function Marketplace() {
         const qty = getQty(product.id);
         return (
             <View key={product.id} style={[styles.productCard, { backgroundColor: colors.cardBackground, borderColor: colors.divider }]}>
-                <View style={[styles.productImageBox, { backgroundColor: isDark ? 'rgba(12, 166, 232, 0.1)' : '#e0f4fd' }]}>
-                    <Text style={styles.productEmoji}>{product.emoji}</Text>
+                <View style={[styles.productImageBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8fafc' }]}>
+                    <Image source={product.image} style={styles.productImage} resizeMode="contain" />
                 </View>
                 <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={2}>{product.name}</Text>
                 <Text style={[styles.productDesc, { color: colors.textSecondary }]} numberOfLines={2}>{product.description}</Text>
@@ -272,7 +272,7 @@ export default function Marketplace() {
                                 <>
                                     {cart.map(item => (
                                         <View key={item.product.id} style={[styles.cartItem, { backgroundColor: colors.cardBackground, borderColor: colors.divider }]}>
-                                            <Text style={styles.cartItemEmoji}>{item.product.emoji}</Text>
+                                            <Image source={item.product.image} style={styles.cartItemImage} resizeMode="cover" />
                                             <View style={styles.cartItemInfo}>
                                                 <Text style={[styles.cartItemName, { color: colors.textPrimary }]} numberOfLines={1}>{item.product.name}</Text>
                                                 <Text style={[styles.cartItemPrice, { color: colors.textSecondary }]}>${item.product.price.toFixed(2)}</Text>
@@ -384,8 +384,8 @@ const styles = StyleSheet.create({
     // Products
     productGrid:        { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
     productCard:        { width: '48.5%', borderRadius: 16, padding: 12, marginBottom: 12, borderWidth: 1, elevation: 2 },
-    productImageBox:    { borderRadius: 12, height: 80, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-    productEmoji:       { fontSize: 36 },
+    productImageBox:    { borderRadius: 12, height: 120, justifyContent: 'center', alignItems: 'center', marginBottom: 8, overflow: 'hidden' },
+    productImage:       { width: '100%', height: '100%' },
     productName:        { fontSize: 13, fontWeight: '700', marginBottom: 4 },
     productDesc:        { fontSize: 11, marginBottom: 4, lineHeight: 16 },
     productUnit:        { fontSize: 11, fontWeight: '600', marginBottom: 4 },
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     continueBtn:        { borderRadius: 14, paddingVertical: 12, paddingHorizontal: 28 },
     continueBtnText:    { color: '#fff', fontWeight: '700', fontSize: 14 },
     cartItem:           { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 12, marginTop: 10, borderWidth: 1 },
-    cartItemEmoji:      { fontSize: 28, marginRight: 10 },
+    cartItemImage:       { width: 50, height: 50, borderRadius: 8, marginRight: 12 },
     cartItemInfo:       { flex: 1 },
     cartItemName:       { fontSize: 13, fontWeight: '600' },
     cartItemPrice:      { fontSize: 12, marginTop: 2 },
