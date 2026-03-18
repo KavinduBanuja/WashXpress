@@ -367,7 +367,7 @@ export default function CustomerHomeScreen() {
                 key={booking.id}
                 style={[styles.bookingCard, { backgroundColor: colors.cardBackground }]}
                 onPress={() =>
-                  router.push({ pathname: '/booking-details', params: { bookingId: booking.id } } as any)
+                  router.push({ pathname: '/booking-details', params: { id: booking.id } } as any)
                 }
               >
                 <View style={styles.bookingHeader}>

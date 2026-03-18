@@ -102,12 +102,11 @@ export default function WasherHome() {
             return;
         }
 
-        const areas = washerProfile.serviceAreas.slice(0, 30); // Firestore 'in' max is 30
-
+        // Simplified query: fetch ALL pending bookings first to diagnose
+        // Later we can add back: where('district', 'in', areas) if we confirm 'district' exists
         const q = query(
             collection(db, 'bookings'),
-            where('status', '==', 'pending'),
-            where('district', 'in', areas)
+            where('status', '==', 'pending')
         );
 
         const unsubscribe = onSnapshot(
@@ -118,12 +117,16 @@ export default function WasherHome() {
                 const fetched: BookingDoc[] = snapshot.docs.map((d) => {
                     const data = d.data();
                     console.log(`  → ${d.id}:`, data.service?.name, data.vehicle?.make, data.status);
+                    
+                    // Filter by washer's service areas manually for now if needed, 
+                    // or just show all to verify it works.
+                    
                     return {
                         id: d.id,
                         customerName: data.customerName ?? 'Customer',
-                        vehicle: data.vehicle ?? { make: '', model: '', color: '', licensePlate: '' },
-                        service: data.service ?? { name: 'Service', categoryId: '', duration: 60 },
-                        address: data.address ?? { addressLine1: '', city: '' },
+                        vehicle: data.vehicle ?? { make: 'Unknown', model: 'Vehicle', color: '', licensePlate: '' },
+                        service: data.service ?? { name: 'Service', categoryId: '', duration: 0 },
+                        address: data.address ?? { addressLine1: 'No address provided', city: '' },
                         scheduledDate: data.scheduledDate ?? '',
                         scheduledTime: data.scheduledTime ?? '',
                         totalPrice: data.totalPrice ?? 0,
@@ -132,6 +135,8 @@ export default function WasherHome() {
                         notes: data.notes ?? null,
                     };
                 });
+
+                console.log(`✅ Successfully mapped ${fetched.length} bookings`);
 
                 fetched.sort((a, b) => {
                     if (a.scheduledDate !== b.scheduledDate)

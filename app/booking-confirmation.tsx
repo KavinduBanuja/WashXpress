@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator, Animated, ScrollView, StyleSheet,
-    Text, TouchableOpacity, View,
+    Text, TouchableOpacity, View, SafeAreaView, useWindowDimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -35,6 +35,7 @@ function formatDate(d: string) {
 
 export default function BookingConfirmationScreen() {
     const { bookingId, path } = useLocalSearchParams<{ bookingId: string; path: string }>();
+    const { width, height } = useWindowDimensions();
     const [booking, setBooking] = useState<BookingDetail | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -64,15 +65,20 @@ export default function BookingConfirmationScreen() {
     const isSubscription = path === 'subscription';
 
     return (
-        <View style={s.container}>
-            <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        <SafeAreaView style={s.container}>
+            <ScrollView contentContainerStyle={[s.scroll, { minHeight: height - 100 }]} showsVerticalScrollIndicator={false}>
 
                 {/* Success Icon */}
                 <Animated.View style={[s.iconWrap, { transform: [{ scale: scaleAnim }], opacity: fadeAnim }]}>
-                    <View style={[s.iconCircle, { backgroundColor: isSubscription ? '#dcfce7' : '#e0f4fd' }]}>
+                    <View style={[s.iconCircle, { 
+                        backgroundColor: isSubscription ? '#dcfce7' : '#e0f4fd',
+                        width: width * 0.35,
+                        height: width * 0.35,
+                        borderRadius: (width * 0.35) / 2
+                    }]}>
                         <Ionicons
                             name="checkmark-circle"
-                            size={80}
+                            size={width * 0.2}
                             color={isSubscription ? '#16a34a' : '#0ca6e8'}
                         />
                     </View>
@@ -194,7 +200,7 @@ export default function BookingConfirmationScreen() {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -224,10 +230,10 @@ function NextStep({ n, text }: { n: number; text: string }) {
 
 const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f8fafc' },
-    scroll: { padding: 24, alignItems: 'center' },
+    scroll: { paddingHorizontal: 24, paddingVertical: 10, alignItems: 'center' },
 
-    iconWrap: { alignItems: 'center', marginTop: 40, marginBottom: 24 },
-    iconCircle: { width: 140, height: 140, borderRadius: 70, justifyContent: 'center', alignItems: 'center' },
+    iconWrap: { alignItems: 'center', marginTop: 20, marginBottom: 24 },
+    iconCircle: { justifyContent: 'center', alignItems: 'center' },
 
     title: { fontSize: 28, fontWeight: '800', color: '#0d1629', textAlign: 'center', marginBottom: 10 },
     subtitle: { fontSize: 15, color: '#6b7280', textAlign: 'center', lineHeight: 22, marginBottom: 18, paddingHorizontal: 10 },
