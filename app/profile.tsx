@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 16, fontWeight: '600' },
   divider: { height: 1, marginLeft: 72 },
 
-  footer: { padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20, borderTopWidth: 1 },
+  footer: { padding: 20, paddingBottom: Platform.OS === 'ios' ? 108 : 88, borderTopWidth: 1 },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 12, borderWidth: 1 },
   logoutText: { fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
 });

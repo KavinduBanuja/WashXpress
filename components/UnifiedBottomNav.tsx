@@ -15,6 +15,23 @@ import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
+// Helper to determine if a pathname is a sub-route of a tab
+const getActiveTab = (pathname: string, userType: string) => {
+  if (userType === 'provider') {
+    if (pathname === '/washer-home' || pathname === '/provider-home' || pathname.startsWith('/washer-job-request')) return 'home';
+    if (pathname === '/myjobs' || pathname.startsWith('/washer-booking-details') || pathname.startsWith('/washer-inprogress') || pathname === '/washer-requests') return 'jobs';
+    if (pathname === '/marketplace') return 'shop';
+    if (pathname === '/profile' || pathname === '/edit-profile') return 'profile';
+  } else {
+    if (pathname === '/customer-home') return 'home';
+    if (pathname === '/service-browse' || pathname.startsWith('/service-details') || pathname.startsWith('/create-booking') || pathname === '/checkout-page') return 'browse';
+    if (pathname === '/booking-list' || pathname.startsWith('/booking-details') || pathname.startsWith('/customer-Inprogress') || pathname === '/booking-confirmation' || pathname === '/payment-screen' || pathname === '/PaymentScreen') return 'bookings';
+    if (pathname === '/subscriptions') return 'plans';
+    if (pathname === '/profile' || pathname === '/edit-profile' || pathname.startsWith('/address-') || pathname.startsWith('/vehicle-') || pathname === '/add-vehicle' || pathname === '/add-address' || pathname === '/my-subscription') return 'account';
+  }
+  return null;
+}
+
 export const UnifiedBottomNav = () => {
   const { colors } = useTheme();
   const { userType } = useAuth();
@@ -33,16 +50,29 @@ export const UnifiedBottomNav = () => {
     ? [
         { key: 'home', icon: 'home', label: 'Home', route: '/washer-home' },
         { key: 'jobs', icon: 'briefcase', label: 'My Jobs', route: '/myjobs' },
-        { key: 'earnings', icon: 'cash', label: 'Earnings', route: '/washer-home' }, // Earnings points back to home for now as per original code
+        { key: 'earnings', icon: 'cash', label: 'Earnings', route: '/washer-home' }, 
         { key: 'shop', icon: 'cart', label: 'Shop', route: '/marketplace' },
         { key: 'profile', icon: 'person', label: 'Profile', route: '/profile' },
       ]
     : [
+        { key: 'home', icon: 'home', label: 'Home', route: '/customer-home' },
         { key: 'browse', icon: 'search', label: 'Browse', route: '/service-browse' },
         { key: 'bookings', icon: 'calendar', label: 'Bookings', route: '/booking-list' },
         { key: 'plans', icon: 'shield-checkmark', label: 'Plans', route: '/subscriptions' },
         { key: 'account', icon: 'person', label: 'Account', route: '/profile' },
       ];
+
+  const activeTabKey = getActiveTab(pathname, userType || 'customer');
+
+  const handlePress = (item: typeof navItems[0]) => {
+    if (activeTabKey === item.key) {
+      // If already on this tab, pop to root (replace with root route)
+      router.replace(item.route as Href);
+    } else {
+      // Use replace for tab switching to avoid stack accumulation
+      router.replace(item.route as Href);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.cardBackground, borderTopColor: colors.border }]}>
@@ -50,8 +80,8 @@ export const UnifiedBottomNav = () => {
         <NavButton
           key={item.key}
           item={item}
-          isActive={pathname === item.route}
-          onPress={() => router.push(item.route as Href)}
+          isActive={activeTabKey === item.key}
+          onPress={() => handlePress(item)}
           colors={colors}
         />
       ))}

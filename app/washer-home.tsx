@@ -4,6 +4,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator, Alert,
+    BackHandler,
     SafeAreaView,
     ScrollView,
     StatusBar,
@@ -102,6 +103,19 @@ export default function WasherHome() {
             router.replace('/washer-pending');
         }
     }, [washerProfile, profileLoading]);
+
+    // ── Prevent Android back button from navigating away from home ───────────
+    useEffect(() => {
+        const backAction = () => {
+            Alert.alert('Exit App', 'Are you sure you want to exit?', [
+                { text: 'Cancel', onPress: () => null, style: 'cancel' },
+                { text: 'Exit', onPress: () => BackHandler.exitApp() },
+            ]);
+            return true;
+        };
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+        return () => backHandler.remove();
+    }, []);
 
     // ── Live Firestore listener on pending bookings ───────────────────────────
     useEffect(() => {

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  BackHandler,
   Dimensions,
   Image,
   RefreshControl,
@@ -98,6 +99,19 @@ export default function CustomerHomeScreen() {
   }, []);
 
   useEffect(() => { loadData(); }, []);
+
+  // Prevent back button from navigating away from home
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert('Exit App', 'Are you sure you want to exit?', [
+        { text: 'Cancel', onPress: () => null, style: 'cancel' },
+        { text: 'Exit', onPress: () => BackHandler.exitApp() },
+      ]);
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, []);
 
   const loadData = async () => {
     try {
