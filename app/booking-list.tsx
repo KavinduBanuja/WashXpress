@@ -177,7 +177,7 @@ export default function BookingListScreen() {
                 </View>
             ) : (
                 <ScrollView
-                    contentContainerStyle={s.scroll}
+                    contentContainerStyle={[s.scroll, { paddingBottom: 110 }]}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.accent]} tintColor={colors.accent} />}
                     showsVerticalScrollIndicator={false}
                 >

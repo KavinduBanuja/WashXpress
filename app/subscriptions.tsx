@@ -451,7 +451,7 @@ export default function SubscriptionsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 110 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   subheading: { fontSize: 14, marginBottom: 24, marginTop: 4 },
   section: { marginBottom: 28 },

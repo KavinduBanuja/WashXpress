@@ -145,7 +145,7 @@ export default function ProfileScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]}>
 
         {/* ── Avatar Section ── */}
         <View style={styles.avatarSection}>

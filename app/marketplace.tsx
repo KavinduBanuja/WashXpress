@@ -328,7 +328,7 @@ export default function Marketplace() {
 const styles = StyleSheet.create({
     safe:               { flex: 1 },
     scroll:             { flex: 1 },
-    scrollContent:      { paddingHorizontal: 16, paddingBottom: 100 },
+    scrollContent:      { paddingHorizontal: 16, paddingBottom: 110 },
 
     // Header
     header:             { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, zIndex: 10 },

@@ -144,7 +144,7 @@ export default function MyJobs() {
             ) : (
                 <ScrollView
                     style={s.scroll}
-                    contentContainerStyle={s.scrollContent}
+                    contentContainerStyle={[s.scrollContent, { paddingBottom: 110 }]}
                     showsVerticalScrollIndicator={false}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
                 >
@@ -218,34 +218,6 @@ export default function MyJobs() {
                 </ScrollView>
             )}
 
-            {/* Bottom Nav */}
-            <View style={s.bottomNav}>
-                {[
-                    { key: 'home',        icon: 'home-outline',      label: 'Home'     },
-                    { key: 'jobs',        icon: 'briefcase-outline',  label: 'My Jobs'  },
-                    { key: 'earnings',    icon: 'cash-outline',       label: 'Earnings' },
-                    { key: 'marketplace', icon: 'cart-outline',        label: 'Shop'     },
-                    { key: 'profile',     icon: 'person-outline',     label: 'Profile'  },
-                ].map(tab => (
-                    <TouchableOpacity
-                        key={tab.key}
-                        style={s.navItem}
-                        onPress={() => {
-                            if (tab.key === 'home')        router.push('/washer-home' as any);
-                            else if (tab.key === 'marketplace') router.push('/marketplace' as any);
-                            else if (tab.key === 'profile') router.push('/profile' as any);
-                            else setActiveTab(tab.key);
-                        }}
-                    >
-                        <Ionicons
-                            name={tab.icon as any}
-                            size={22}
-                            color={activeTab === tab.key ? '#2563eb' : '#9ca3af'}
-                        />
-                        <Text style={[s.navLabel, activeTab === tab.key && s.navLabelActive]}>{tab.label}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
         </SafeAreaView>
     );
 }

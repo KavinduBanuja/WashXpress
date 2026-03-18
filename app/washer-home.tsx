@@ -206,7 +206,7 @@ export default function WasherHome() {
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
             <ScrollView
                 style={[styles.scroll, { backgroundColor: colors.background }]}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* ── Header ── */}
@@ -314,40 +314,6 @@ export default function WasherHome() {
                 </View>
             </ScrollView>
 
-            {/* ── Bottom Navigation ── */}
-            <View style={[styles.bottomNav, { backgroundColor: colors.cardBackground, borderTopColor: colors.border }]}>
-                {[
-                    { key: 'home', icon: 'home-outline', label: 'Home' },
-                    { key: 'jobs', icon: 'briefcase-outline', label: 'My Jobs' },
-                    { key: 'earnings', icon: 'cash-outline', label: 'Earnings' },
-                    { key: 'shop', icon: 'cart-outline', label: 'Shop' },
-                    { key: 'profile', icon: 'person-outline', label: 'Profile' },
-                ].map((tab) => (
-                    <TouchableOpacity
-                        key={tab.key}
-                        style={styles.navItem}
-                        onPress={() => {
-                            if (tab.key === 'shop') router.push('/marketplace' as any);
-                            else if (tab.key === 'profile') router.push('/profile' as any);
-                            else if (tab.key === 'jobs') router.push('/myjobs' as any);
-                            else setActiveTab(tab.key);
-                        }}
-                    >
-                        <Ionicons
-                            name={tab.icon as any}
-                            size={22}
-                            color={activeTab === tab.key ? colors.accent : colors.textSecondary}
-                        />
-                        <Text style={[
-                            styles.navLabel,
-                            { color: colors.textSecondary },
-                            activeTab === tab.key && [styles.navLabelActive, { color: colors.accent }]
-                        ]}>
-                            {tab.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
         </SafeAreaView>
     );
 }
