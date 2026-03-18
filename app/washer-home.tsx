@@ -95,6 +95,14 @@ export default function WasherHome() {
     const [loading, setLoading] = useState(true);
     const [accepting, setAccepting] = useState<string | null>(null);
 
+    // ── Runtime Verification Guard ───────────────────────────────────────────
+    useEffect(() => {
+        if (!profileLoading && washerProfile && washerProfile.isVerified === false) {
+            console.log('🛑 Washer not verified, redirecting to pending...');
+            router.replace('/washer-pending');
+        }
+    }, [washerProfile, profileLoading]);
+
     // ── Live Firestore listener on pending bookings ───────────────────────────
     useEffect(() => {
         if (!washerProfile?.serviceAreas || washerProfile.serviceAreas.length === 0) {

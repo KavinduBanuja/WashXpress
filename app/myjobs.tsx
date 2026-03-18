@@ -191,7 +191,7 @@ export default function MyJobs() {
                             <Text style={s.emptySubtitle}>Accept jobs from the home screen to see them here</Text>
                         </View>
                     ) : (
-                        upcoming.map(job => <UpcomingJobCard key={job.id} job={job} onMap={openMaps} onView={id => router.push({ pathname: '/washer-booking-details', params: { id } } as any)} />)
+                        upcoming.map(job => <UpcomingJobCard key={job.id} job={job} onMap={openMaps} onView={id => router.push({ pathname: '/washer-inprogress', params: { id } } as any)} />)
                     )}
 
                     {/* ── Completed ── */}

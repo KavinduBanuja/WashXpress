@@ -75,7 +75,7 @@ export default function WasherInProgressScreen() {
             setLoading(true);
             const res = await apiFetch(`/bookings/${bookingId}`, {}, 'provider');
             if (res.success) {
-                setBooking(res.data.booking);
+                setBooking(res.booking);
             } else {
                 Alert.alert('Error', 'Booking not found');
                 router.back();

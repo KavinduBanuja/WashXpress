@@ -34,10 +34,12 @@ export default function RootLayout() {
             <Stack.Screen name="complain-new" options={{ headerShown: false }} />
             <Stack.Screen name="washer-pending" />
             <Stack.Screen name="washer-requests" />
+            <Stack.Screen name="myjobs" />
             <Stack.Screen name="service-browse" />
             <Stack.Screen name="my-subscription" options={{ headerShown: false }} />
             <Stack.Screen name="service-details" />
             <Stack.Screen name="booking-details" />
+            <Stack.Screen name="washer-inprogress" />
             <Stack.Screen name="edit-profile" />
             <Stack.Screen name="subscriptions" options={{ headerShown: false }} />
             <Stack.Screen name="vehicle-list" options={{ headerShown: false }} />

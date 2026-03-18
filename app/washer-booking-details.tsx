@@ -3,7 +3,9 @@ import { apiFetch } from '@/services/apiClient';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Href, useLocalSearchParams, useRouter } from 'expo-router';
+import { useProfile } from '../hooks/useProfile';
 import React, { useEffect, useState } from 'react';
+
 import {
     ActivityIndicator, Alert, Linking, Platform,
     ScrollView, StyleSheet, Text, TouchableOpacity, View,
@@ -65,6 +67,15 @@ export default function WasherBookingDetailsScreen() {
     const [booking, setBooking] = useState<AcceptedBooking | null>(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+    const { data: washerProfile, isLoading: profileLoading } = useProfile();
+
+    // ── Runtime Verification Guard ───────────────────────────────────────────
+    useEffect(() => {
+        if (!profileLoading && washerProfile && washerProfile.isVerified === false) {
+            console.log('🛑 Washer not verified, redirecting to pending...');
+            router.replace('/washer-pending');
+        }
+    }, [washerProfile, profileLoading]);
 
     useEffect(() => {
         if (!bookingId) { router.back(); return; }

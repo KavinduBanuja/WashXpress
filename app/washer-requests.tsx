@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { Header } from '../components/Header';
 import { useTheme } from '../context/ThemeContext';
+import { useProfile } from '../hooks/useProfile';
+
 
 interface JobRequest {
     id: string;
@@ -62,6 +64,15 @@ export default function WasherRequestsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [acceptingId, setAcceptingId] = useState<string | null>(null);
     const [decliningId, setDecliningId] = useState<string | null>(null);
+    const { data: washerProfile, isLoading: profileLoading } = useProfile();
+
+    // ── Runtime Verification Guard ───────────────────────────────────────────
+    useEffect(() => {
+        if (!profileLoading && washerProfile && washerProfile.isVerified === false) {
+            console.log('🛑 Washer not verified, redirecting to pending...');
+            router.replace('/washer-pending');
+        }
+    }, [washerProfile, profileLoading]);
 
     useEffect(() => {
         loadRequests();

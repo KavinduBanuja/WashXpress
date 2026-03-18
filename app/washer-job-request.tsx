@@ -7,7 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useProfile } from '../hooks/useProfile';
 import { apiFetch } from '../services/apiClient';
+
 
 interface JobRequest {
     id: string;
@@ -57,6 +59,16 @@ export default function WasherJobRequestScreen() {
     const [acceptModalVisible, setAcceptModalVisible] = useState(false);
     const [preferredTime, setPreferredTime] = useState<string | null>(null);
 
+    const { data: washerProfile, isLoading: profileLoading } = useProfile();
+
+    // ── Runtime Verification Guard ───────────────────────────────────────────
+    useEffect(() => {
+        if (!profileLoading && washerProfile && washerProfile.isVerified === false) {
+            console.log('🛑 Washer not verified, redirecting to pending...');
+            router.replace('/washer-pending');
+        }
+    }, [washerProfile, profileLoading]);
+
     useEffect(() => {
         if (!requestId) { Alert.alert('Error', 'Job not found'); router.back(); return; }
         loadRequest();
@@ -67,7 +79,7 @@ export default function WasherJobRequestScreen() {
             setLoading(true);
             const res = await apiFetch(`/bookings/${requestId}`, {}, 'provider');
             if (res.success) {
-                const job: JobRequest = res.data.booking;
+                const job: JobRequest = res.data?.booking ?? res.data ?? res.booking;
                 setRequest(job);
                 setPreferredTime(job.scheduledTime); // default to customer's requested time
                 if (job.status !== 'pending') {
