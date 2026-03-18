@@ -615,7 +615,7 @@ export default function BookingDetailsScreen() {
                     booking.status === 'completed' && (
                         <TouchableOpacity
                             style={[styles.rateButton, { backgroundColor: colors.warning || '#FFD700' }]}
-                            onPress={() => router.push(`/rate-booking?id=${booking.id}` as any)}
+                            onPress={() => router.push({ pathname: '/rate-booking', params: { id: booking.id } } as any)}
                         >
                             <Ionicons name="star-outline" size={20} color="#FFF" />
                             <Text style={[styles.rateButtonText, { color: '#FFF' }]}>Rate This Service</Text>

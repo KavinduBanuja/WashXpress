@@ -184,7 +184,16 @@ export default function BookingListScreen() {
                     {current.length === 0 ? (
                         <EmptyState tab={tab} colors={colors} />
                     ) : (
-                        current.map((b) => <BookingCard key={b.id} booking={b} colors={colors} isDark={isDark} statusConfig={STATUS_CONFIG} />)
+                        current.map((b) => (
+                            <BookingCard 
+                                key={b.id} 
+                                booking={b} 
+                                colors={colors} 
+                                isDark={isDark} 
+                                statusConfig={STATUS_CONFIG} 
+                                isHistory={tab === 'history'}
+                            />
+                        ))
                     )}
                     <View style={{ height: 40 }} />
                 </ScrollView>
@@ -194,7 +203,19 @@ export default function BookingListScreen() {
 }
 
 // ─── Booking Card ─────────────────────────────────────────────────────────────
-function BookingCard({ booking, colors, isDark, statusConfig }: { booking: Booking; colors: any; isDark: boolean; statusConfig: any }) {
+function BookingCard({ 
+    booking, 
+    colors, 
+    isDark, 
+    statusConfig, 
+    isHistory 
+}: { 
+    booking: Booking; 
+    colors: any; 
+    isDark: boolean; 
+    statusConfig: any;
+    isHistory?: boolean;
+}) {
     const cfg = statusConfig[booking.status] || statusConfig.pending;
     const emoji = CATEGORY_EMOJI[booking.service?.categoryId] || '🚗';
     const isPending = booking.status === 'pending';
@@ -272,6 +293,37 @@ function BookingCard({ booking, colors, isDark, statusConfig }: { booking: Booki
             {isPending && (
                 <View style={[s.pendingBar, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7' }]}>
                     <View style={[s.pendingBarFill, { backgroundColor: colors.warning }]} />
+                </View>
+            )}
+
+            {/* History Actions */}
+            {isHistory && (
+                <View style={[s.historyActionRow, { borderTopColor: colors.divider }]}>
+                    <TouchableOpacity 
+                        style={[s.historyActionBtn, { backgroundColor: colors.accent }]}
+                        onPress={() => router.push('/Reviews&RatingsScreen')}
+                    >
+                        <Ionicons name="star-outline" size={14} color="#fff" />
+                        <Text style={s.historyActionTxt}>Rate & Review</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={[s.historyActionBtn, { backgroundColor: colors.error || '#ef4444' }]}
+                        onPress={() => router.push({
+                            pathname: '/complaint-new',
+                            params: {
+                                bookingId: booking.id,
+                                serviceName: booking.service?.name,
+                                vehicleName: `${booking.vehicle?.make} ${booking.vehicle?.model}`,
+                                providerName: booking.assignedStaffName || 'Assigned Washer',
+                                totalPrice: booking.totalPrice.toString(),
+                                currency: booking.currency || 'LKR'
+                            }
+                        } as any)}
+                    >
+                        <Ionicons name="warning-outline" size={14} color="#fff" />
+                        <Text style={s.historyActionTxt}>File Complaint</Text>
+                    </TouchableOpacity>
                 </View>
             )}
         </TouchableOpacity>
@@ -420,4 +472,25 @@ const s = StyleSheet.create({
         backgroundColor: '#0ca6e8', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 28,
     },
     emptyBtnTxt: { fontSize: 15, fontWeight: '700', color: '#fff' },
+    historyActionRow: {
+        flexDirection: 'row',
+        padding: 12,
+        gap: 10,
+        borderTopWidth: 1,
+    },
+    historyActionBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    historyActionTxt: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#fff',
+    },
+
 });
