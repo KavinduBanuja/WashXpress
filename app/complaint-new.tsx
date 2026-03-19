@@ -1,4 +1,5 @@
 // app/complaint-new.tsx
+import { apiFetch } from '@/services/apiClient';
 import { uploadImages, StoragePaths } from '@/utils/storage';
 import React, { useState, useEffect } from 'react';
 import {
@@ -151,9 +152,9 @@ export default function ComplaintNewScreen() {
 
       const res = await fetch(`${API_BASE_URL}/api/customer/complaints`, {
         method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          'Content-Type': 'application/json' 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           bookingId,
@@ -161,9 +162,10 @@ export default function ComplaintNewScreen() {
           description: description.trim(),
           requestRefund,
           refundAmount: requestRefund ? parseFloat(refundAmount) : null,
-          evidencePhotos: uploadedUrls,
+          evidencePhotos,
         }),
       });
+
 
       const data = await res.json();
 

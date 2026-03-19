@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Modal,
-  Image,
+  View, Text, ScrollView, SafeAreaView, TouchableOpacity,
+  TextInput, ActivityIndicator, Modal, Image, Alert,
+  StyleSheet, Animated,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { auth } from '../firebaseConfig';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { auth, db } from '../firebaseConfig';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Star, ChevronDown, ChevronUp, AlertCircle, Check } from 'lucide-react-native';
 
-// Types
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface Trainee {
   id: string;
   name: string;
@@ -26,11 +23,7 @@ interface Trainee {
   previousEmployer?: string;
   specializations?: string[];
   status: 'in_training' | 'certified';
-  progress: {
-    completedSessions: number;
-    requiredSessions: number;
-    isComplete: boolean;
-  };
+  progress: { completedSessions: number; requiredSessions: number; isComplete: boolean };
   averageRating?: number;
   evaluations?: Evaluation[];
 }
@@ -38,238 +31,268 @@ interface Trainee {
 interface Evaluation {
   id: string;
   date: string;
-  ratings: {
-    technique: number;
-    speed: number;
-    customerService: number;
-    safety: number;
-  };
+  ratings: { technique: number; speed: number; customerService: number; safety: number };
   feedback: string;
 }
 
 interface FormState {
   bookingId: string;
-  ratings: {
-    technique: number | null;
-    speed: number | null;
-    customerService: number | null;
-    safety: number | null;
-  };
+  ratings: { technique: number | null; speed: number | null; customerService: number | null; safety: number | null };
   feedback: string;
   notes: string;
 }
 
 const RATING_CATEGORIES = [
-  {
-    key: 'technique',
-    label: 'Technique',
-    description: 'Quality of wash, attention to detail',
-  },
-  {
-    key: 'speed',
-    label: 'Speed',
-    description: 'Efficiency, time management',
-  },
-  {
-    key: 'customerService',
-    label: 'Customer Service',
-    description: 'Professionalism, communication',
-  },
-  {
-    key: 'safety',
-    label: 'Safety',
-    description: 'Equipment handling, PPE usage',
-  },
+  { key: 'technique', label: 'Technique', description: 'Quality of wash, attention to detail' },
+  { key: 'speed', label: 'Speed', description: 'Efficiency, time management' },
+  { key: 'customerService', label: 'Customer Service', description: 'Professionalism, communication' },
+  { key: 'safety', label: 'Safety', description: 'Equipment handling, PPE usage' },
 ];
 
+const AGREEMENT_POINTS = [
+  'I will provide honest and constructive evaluations to help trainees improve',
+  'I will complete all required evaluation sessions in a timely manner',
+  "I understand that my feedback directly impacts a trainee's certification",
+  'I will maintain professionalism and respect in all mentoring interactions',
+  'I will report any serious concerns about a trainee to the admin team',
+  'I agree that WashXpress may review my evaluations for quality assurance',
+];
+
+// ── Agreement Gate ─────────────────────────────────────────────────────────────
+function AgreementGate({ onAccepted }: { onAccepted: () => void }) {
+  const [checked, setChecked] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  }, []);
+
+  const handleAccept = async () => {
+    if (!checked) {
+      Alert.alert('Agreement Required', 'Please check the box to confirm you agree to the terms.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not authenticated');
+      await setDoc(
+        doc(db, 'providers', user.uid),
+        {
+          isMentor: true,                    // ← add this
+          mentorshipAgreement: {
+            accepted: true,
+            acceptedAt: serverTimestamp(),
+            version: '1.0',
+          },
+        },
+        { merge: true }
+      );
+      onAccepted();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to save agreement');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={ag.container}>
+      <StatusBar style="light" />
+      <View style={ag.header}>
+        <TouchableOpacity onPress={() => router.back()} style={ag.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={ag.headerTitle}>Mentorship Program</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={ag.scroll} showsVerticalScrollIndicator={false}>
+        <Animated.View style={{ opacity: fadeAnim }}>
+
+          {/* Hero */}
+          <View style={ag.hero}>
+            <View style={ag.heroIconCircle}>
+              <Text style={{ fontSize: 48 }}>🎓</Text>
+            </View>
+            <Text style={ag.heroTitle}>Become a Mentor</Text>
+            <Text style={ag.heroSub}>
+              Share your expertise with new washers and help build the next generation of WashXpress professionals.
+            </Text>
+          </View>
+
+          {/* Benefits */}
+          <View style={ag.card}>
+            <Text style={ag.cardTitle}>Why become a mentor?</Text>
+            {[
+              { icon: '⭐', text: 'Earn extra recognition and mentor badges on your profile' },
+              { icon: '💰', text: 'Priority job matching for active mentors' },
+              { icon: '🏆', text: 'Exclusive mentor tier with higher earnings potential' },
+              { icon: '🤝', text: 'Build your professional reputation in the community' },
+            ].map((b, i) => (
+              <View key={i} style={ag.benefitRow}>
+                <Text style={{ fontSize: 20, width: 28 }}>{b.icon}</Text>
+                <Text style={ag.benefitText}>{b.text}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Agreement */}
+          <View style={ag.card}>
+            <Text style={ag.cardTitle}>Mentor Agreement</Text>
+            <Text style={ag.cardSub}>By joining the program you agree to the following:</Text>
+            {AGREEMENT_POINTS.map((point, i) => (
+              <View key={i} style={ag.pointRow}>
+                <View style={ag.pointDot}>
+                  <Text style={ag.pointNum}>{i + 1}</Text>
+                </View>
+                <Text style={ag.pointText}>{point}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Checkbox */}
+          <TouchableOpacity style={ag.checkRow} onPress={() => setChecked(v => !v)} activeOpacity={0.8}>
+            <View style={[ag.checkbox, checked && ag.checkboxChecked]}>
+              {checked && <Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+            <Text style={ag.checkLabel}>
+              I have read and agree to the Mentorship Program terms and responsibilities
+            </Text>
+          </TouchableOpacity>
+
+          {/* Accept button */}
+          <TouchableOpacity
+            style={[ag.acceptBtn, (!checked || submitting) && ag.acceptBtnDisabled]}
+            onPress={handleAccept}
+            disabled={submitting || !checked}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="shield-checkmark-outline" size={20} color="#fff" />
+                <Text style={ag.acceptBtnText}>Join the Mentorship Program</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <Text style={ag.disclaimer}>You can leave the program at any time by contacting the admin team.</Text>
+          <View style={{ height: 40 }} />
+        </Animated.View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ── Detail Row ────────────────────────────────────────────────────────────────
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ marginBottom: 8 }}>
+      <Text style={{ fontSize: 11, color: '#64748b', marginBottom: 1 }}>{label}</Text>
+      <Text style={{ fontSize: 14, color: '#fff' }}>{value}</Text>
+    </View>
+  );
+}
+
+// ── Main Screen ───────────────────────────────────────────────────────────────
 export default function MentorshipScreen() {
-  // Global state
+  const [agreedToMentorship, setAgreedToMentorship] = useState<boolean | null>(null);
+  const [checkingAgreement, setCheckingAgreement] = useState(true);
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [expandedTraineeId, setExpandedTraineeId] = useState<string | null>(null);
   const [showFormForTraineeId, setShowFormForTraineeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  // Form state per trainee
   const [formState, setFormState] = useState<Record<string, FormState>>({});
+  const [completionModal, setCompletionModal] = useState({ visible: false, traineeName: '' });
 
-  // Completion modal
-  const [completionModal, setCompletionModal] = useState({
-    visible: false,
-    traineeName: '',
-  });
+  useEffect(() => { checkAgreement(); }, []);
 
-  // Fetch trainees on mount
-  useEffect(() => {
-    fetchTrainees();
-  }, []);
+  const checkAgreement = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) { setAgreedToMentorship(false); setCheckingAgreement(false); return; }
+      const providerDoc = await getDoc(doc(db, 'providers', user.uid));
+      const data = providerDoc.data();
+      // Check either field — backwards compatible
+      const accepted = data?.isMentor === true || data?.mentorshipAgreement?.accepted === true;
+      setAgreedToMentorship(accepted);
+    } catch {
+      setAgreedToMentorship(false);
+    } finally {
+      setCheckingAgreement(false);
+    }
+  };
 
-  const getAuthToken = async (): Promise<string> => {
+  const getAuthToken = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error('Not authenticated');
     return user.getIdToken(true);
   };
 
-  const fetchTrainees = async () => {
+  const fetchTrainees = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
       const token = await getAuthToken();
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/certification/my-trainees`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_PROVIDER_API_URL}/certification/my-trainees`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.status === 401) {
-        // Retry once with fresh token
-        const newToken = await getAuthToken();
-        const retryResponse = await fetch(
-          `${process.env.EXPO_PUBLIC_API_BASE_URL}/certification/my-trainees`,
-          {
-            headers: {
-              Authorization: `Bearer ${newToken}`,
-            },
-          }
-        );
-        if (!retryResponse.ok) throw new Error('Failed to fetch trainees');
-        const data = await retryResponse.json();
-        setTrainees(data.data?.trainees || []);
-      } else if (!response.ok) {
-        throw new Error('Failed to fetch trainees');
-      } else {
-        const data = await response.json();
-        setTrainees(data.data?.trainees || []);
-      }
+      if (!res.ok) throw new Error('Failed to fetch trainees');
+      const data = await res.json();
+      setTrainees(data.data?.trainees || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const toggleTraineeExpanded = (traineeId: string) => {
-    if (expandedTraineeId === traineeId) {
-      setExpandedTraineeId(null);
-      setShowFormForTraineeId(null);
-    } else {
-      setExpandedTraineeId(traineeId);
-      setShowFormForTraineeId(null);
-      // Initialize form state if needed
-      if (!formState[traineeId]) {
-        setFormState((prev) => ({
-          ...prev,
-          [traineeId]: {
-            bookingId: '',
-            ratings: {
-              technique: null,
-              speed: null,
-              customerService: null,
-              safety: null,
-            },
-            feedback: '',
-            notes: '',
-          },
-        }));
-      }
+  useEffect(() => { if (agreedToMentorship) fetchTrainees(); }, [agreedToMentorship]);
+
+  const toggleExpanded = (id: string) => {
+    if (expandedTraineeId === id) { setExpandedTraineeId(null); setShowFormForTraineeId(null); return; }
+    setExpandedTraineeId(id);
+    setShowFormForTraineeId(null);
+    if (!formState[id]) {
+      setFormState(prev => ({
+        ...prev,
+        [id]: { bookingId: '', ratings: { technique: null, speed: null, customerService: null, safety: null }, feedback: '', notes: '' },
+      }));
     }
   };
 
-  const toggleFormVisible = (traineeId: string) => {
-    if (showFormForTraineeId === traineeId) {
-      setShowFormForTraineeId(null);
-    } else {
-      setShowFormForTraineeId(traineeId);
-    }
-  };
+  const updateFormState = (id: string, key: keyof FormState, val: any) =>
+    setFormState(prev => ({ ...prev, [id]: { ...prev[id], [key]: val } }));
 
-  const updateFormState = (
-    traineeId: string,
-    key: keyof FormState,
-    value: any
-  ) => {
-    setFormState((prev) => ({
-      ...prev,
-      [traineeId]: {
-        ...prev[traineeId],
-        [key]: value,
-      },
-    }));
-  };
-
-  const updateRating = (traineeId: string, category: string, value: number) => {
-    setFormState((prev) => ({
-      ...prev,
-      [traineeId]: {
-        ...prev[traineeId],
-        ratings: {
-          ...prev[traineeId].ratings,
-          [category]: value,
-        },
-      },
-    }));
-  };
+  const updateRating = (id: string, cat: string, val: number) =>
+    setFormState(prev => ({ ...prev, [id]: { ...prev[id], ratings: { ...prev[id].ratings, [cat]: val } } }));
 
   const submitEvaluation = async (traineeId: string) => {
     try {
       setSubmitting(true);
       const form = formState[traineeId];
-
       const token = await getAuthToken();
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/certification/evaluate`,
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_PROVIDER_API_URL}/certification/evaluate`,
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            traineeId,
-            bookingId: form.bookingId || null,
-            ratings: form.ratings,
-            feedback: form.feedback,
-            notes: form.notes,
-          }),
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ traineeId, bookingId: form.bookingId || null, ratings: form.ratings, feedback: form.feedback, notes: form.notes }),
         }
       );
-
-      if (response.status === 401) {
-        const newToken = await getAuthToken();
-        const retryResponse = await fetch(
-          `${process.env.EXPO_PUBLIC_API_BASE_URL}/certification/evaluate`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${newToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              traineeId,
-              bookingId: form.bookingId || null,
-              ratings: form.ratings,
-              feedback: form.feedback,
-              notes: form.notes,
-            }),
-          }
-        );
-        if (!retryResponse.ok) throw new Error('Submission failed');
-        const data = await retryResponse.json();
-        handleEvaluationSuccess(data, traineeId);
-      } else if (response.status === 403) {
-        setError('You are not assigned to evaluate this trainee');
-      } else if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.message || 'Evaluation submission failed');
-      } else {
-        const data = await response.json();
-        handleEvaluationSuccess(data, traineeId);
+      if (!res.ok) { const d = await res.json(); setError(d.message || 'Submission failed'); return; }
+      const data = await res.json();
+      if (data.data?.progress?.isComplete) {
+        const trainee = trainees.find(t => t.id === traineeId);
+        setCompletionModal({ visible: true, traineeName: trainee?.name || 'Trainee' });
       }
+      fetchTrainees();
+      setShowFormForTraineeId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -277,514 +300,307 @@ export default function MentorshipScreen() {
     }
   };
 
-  const handleEvaluationSuccess = (data: any, traineeId: string) => {
-    const { progress } = data.data;
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-    if (progress.isComplete) {
-      const trainee = trainees.find((t) => t.id === traineeId);
-      setCompletionModal({
-        visible: true,
-        traineeName: trainee?.name || 'Trainee',
-      });
-    }
+  const renderStars = (id: string, cat: string, val: number | null) => (
+    <View style={{ flexDirection: 'row', gap: 6 }}>
+      {[1, 2, 3, 4, 5].map(star => (
+        <TouchableOpacity key={star} onPress={() => updateRating(id, cat, star)}>
+          <Star size={28} color={val && val >= star ? '#FFB800' : '#374151'} fill={val && val >= star ? '#FFB800' : 'none'} />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
-    // Refresh trainee data
-    fetchTrainees();
-    setShowFormForTraineeId(null);
-  };
-
-  const getAvatarInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const renderStarRating = (
-    traineeId: string,
-    category: string,
-    currentRating: number | null
-  ) => {
+  // ── Loading ───────────────────────────────────────────────────────────────
+  if (checkingAgreement) {
     return (
-      <View className="flex-row gap-1.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity
-            key={star}
-            onPress={() => updateRating(traineeId, category, star)}
-            activeOpacity={0.6}
-          >
-            <Star
-              size={28}
-              color={
-                currentRating && currentRating >= star
-                  ? '#FFB800'
-                  : '#E5E7EB'
-              }
-              fill={
-                currentRating && currentRating >= star ? '#FFB800' : 'none'
-              }
-            />
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
-  };
-
-  // ...existing code...
-
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-900">
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
-        </View>
+      <SafeAreaView style={s.safe}>
+        <View style={s.center}><ActivityIndicator size="large" color="#2563eb" /></View>
       </SafeAreaView>
     );
   }
 
+  // ── Agreement gate ────────────────────────────────────────────────────────
+  if (!agreedToMentorship) {
+    return <AgreementGate onAccepted={() => setAgreedToMentorship(true)} />;
+  }
+
+  // ── Main screen ───────────────────────────────────────────────────────────
   return (
-    <SafeAreaView className="flex-1 bg-gray-900">
+    <SafeAreaView style={s.safe}>
       <StatusBar style="light" />
-      <ScrollView className="flex-1 px-4 py-4">
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-3xl font-bold text-white">My Trainees</Text>
-          <View className="mt-2 inline-flex bg-blue-600 rounded-full px-3 py-1 w-12">
-            <Text className="text-white font-semibold text-sm">
-              {trainees.length}
-            </Text>
-          </View>
+
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={s.headerTitle}>My Trainees</Text>
+        <View style={s.countBadge}>
+          <Text style={s.countBadgeTxt}>{trainees.length}</Text>
         </View>
+      </View>
 
-        {/* Error Banner */}
-        {error && (
-          <View className="mb-4 bg-red-900/30 border border-red-700 rounded-lg p-3 flex-row gap-2">
-            <AlertCircle size={20} color="#FCA5A5" />
-            <Text className="text-red-300 flex-1 text-sm">{error}</Text>
+      {loading ? (
+        <View style={s.center}><ActivityIndicator size="large" color="#2563eb" /></View>
+      ) : (
+        <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+
+          {error && (
+            <View style={s.errorBanner}>
+              <AlertCircle size={18} color="#fca5a5" />
+              <Text style={s.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Mentor badge */}
+          <View style={s.mentorBadge}>
+            <Text style={{ fontSize: 28 }}>🎓</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.mentorBadgeTitle}>Active Mentor</Text>
+              <Text style={s.mentorBadgeSub}>You are part of the WashXpress Mentorship Program</Text>
+            </View>
+            <View style={s.mentorDot} />
           </View>
-        )}
 
-        {/* Empty State */}
-        {trainees.length === 0 && (
-          <View className="bg-gray-800 rounded-lg p-8 items-center">
-            <Text className="text-gray-400 text-center text-base">
-              No trainees assigned yet.
-            </Text>
-          </View>
-        )}
+          {trainees.length === 0 && (
+            <View style={s.emptyCard}>
+              <Text style={{ fontSize: 36, marginBottom: 10 }}>👤</Text>
+              <Text style={s.emptyTitle}>No trainees assigned yet</Text>
+              <Text style={s.emptySub}>The admin will assign trainees to you soon.</Text>
+            </View>
+          )}
 
-        {/* Trainees List */}
-        {trainees.map((trainee) => {
-          const isExpanded = expandedTraineeId === trainee.id;
-          const form = formState[trainee.id] || {
-            bookingId: '',
-            ratings: { technique: null, speed: null, customerService: null, safety: null },
-            feedback: '',
-            notes: '',
-          };
-          const showForm = showFormForTraineeId === trainee.id;
+          {trainees.map(trainee => {
+            const isExpanded = expandedTraineeId === trainee.id;
+            const showForm = showFormForTraineeId === trainee.id;
+            const form = formState[trainee.id] || {
+              bookingId: '', ratings: { technique: null, speed: null, customerService: null, safety: null }, feedback: '', notes: '',
+            };
+            const canSubmit = Object.values(form.ratings).every(r => r !== null) && form.feedback.trim().length >= 50;
+            const pct = Math.round((trainee.progress.completedSessions / trainee.progress.requiredSessions) * 100);
 
-          const allRatingsSet =
-            form.ratings.technique !== null &&
-            form.ratings.speed !== null &&
-            form.ratings.customerService !== null &&
-            form.ratings.safety !== null;
-          const feedbackValid = form.feedback.trim().length >= 50;
-          const canSubmit = allRatingsSet && feedbackValid;
-
-          return (
-            <TouchableOpacity
-              key={trainee.id}
-              onPress={() => toggleTraineeExpanded(trainee.id)}
-              activeOpacity={0.7}
-              className="mb-4"
-            >
-              <View className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                {/* Trainee Card Header */}
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center flex-1 gap-3">
-                    {trainee.photo ? (
-                      <Image
-                        source={{ uri: trainee.photo }}
-                        className="w-12 h-12 rounded-full"
-                      />
-                    ) : (
-                      <View className="w-12 h-12 rounded-full bg-blue-600 items-center justify-center">
-                        <Text className="text-white font-bold text-sm">
-                          {getAvatarInitials(trainee.name)}
-                        </Text>
-                      </View>
-                    )}
-                    <View className="flex-1">
-                      <Text className="text-white font-semibold text-base">
-                        {trainee.name}
-                      </Text>
-                      <Text className="text-gray-400 text-xs">{trainee.email}</Text>
+            return (
+              <TouchableOpacity key={trainee.id} onPress={() => toggleExpanded(trainee.id)} activeOpacity={0.8} style={s.traineeCard}>
+                <View style={s.traineeTop}>
+                  <View style={s.traineeLeft}>
+                    {trainee.photo
+                      ? <Image source={{ uri: trainee.photo }} style={s.avatar} />
+                      : <View style={s.avatarFallback}><Text style={s.avatarInitials}>{getInitials(trainee.name)}</Text></View>
+                    }
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.traineeName}>{trainee.name}</Text>
+                      <Text style={s.traineeEmail}>{trainee.email}</Text>
                     </View>
                   </View>
-                  {isExpanded ? (
-                    <ChevronUp size={20} color="#9CA3AF" />
-                  ) : (
-                    <ChevronDown size={20} color="#9CA3AF" />
+                  {isExpanded ? <ChevronUp size={20} color="#64748b" /> : <ChevronDown size={20} color="#64748b" />}
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <View style={[s.statusPill, trainee.status === 'certified' ? s.statusCert : s.statusTrain]}>
+                    <Text style={[s.statusTxt, { color: trainee.status === 'certified' ? '#4ade80' : '#fbbf24' }]}>
+                      {trainee.status === 'certified' ? '✓ Certified' : 'In Training'}
+                    </Text>
+                  </View>
+                  {trainee.averageRating !== undefined && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                      <Star size={13} color="#FFB800" fill="#FFB800" />
+                      <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: '600' }}>{trainee.averageRating.toFixed(1)}</Text>
+                    </View>
                   )}
                 </View>
 
-                {/* Status & Progress Summary */}
-                <View className="mt-4 gap-2">
-                  <View className="flex-row items-center gap-2">
-                    <View
-                      className={`px-2 py-1 rounded-full ${
-                        trainee.status === 'certified'
-                          ? 'bg-green-900/30'
-                          : 'bg-yellow-900/30'
-                      }`}
-                    >
-                      <Text
-                        className={`text-xs font-semibold ${
-                          trainee.status === 'certified'
-                            ? 'text-green-400'
-                            : 'text-yellow-400'
-                        }`}
-                      >
-                        {trainee.status === 'certified'
-                          ? 'Certified'
-                          : 'In Training'}
-                      </Text>
-                    </View>
-                    {trainee.averageRating !== undefined && (
-                      <View className="flex-row items-center gap-1">
-                        <Star
-                          size={14}
-                          color="#FFB800"
-                          fill="#FFB800"
-                        />
-                        <Text className="text-gray-300 text-xs font-semibold">
-                          {trainee.averageRating.toFixed(1)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Progress Bar */}
-                  <View className="gap-1">
-                    <Text className="text-gray-400 text-xs">
-                      {trainee.progress.completedSessions} of{' '}
-                      {trainee.progress.requiredSessions} sessions completed
-                    </Text>
-                    <View className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <View
-                        className="h-full bg-blue-600"
-                        style={{
-                          width: `${
-                            (trainee.progress.completedSessions /
-                              trainee.progress.requiredSessions) *
-                            100
-                          }%`,
-                        }}
-                      />
-                    </View>
+                <View style={{ gap: 4 }}>
+                  <Text style={{ fontSize: 11, color: '#64748b' }}>{trainee.progress.completedSessions}/{trainee.progress.requiredSessions} sessions</Text>
+                  <View style={s.progressBg}>
+                    <View style={[s.progressFill, { width: `${pct}%` as any }]} />
                   </View>
                 </View>
 
-                {/* Expanded Trainee Details */}
                 {isExpanded && (
-                  <View className="mt-6 pt-6 border-t border-gray-700 gap-5">
-                    {/* Profile Info */}
-                    <View className="gap-3">
-                      <Text className="text-white font-semibold text-sm">
-                        Profile
-                      </Text>
-                      {trainee.phone && (
-                        <View>
-                          <Text className="text-gray-400 text-xs">Phone</Text>
-                          <Text className="text-white text-sm">
-                            {trainee.phone}
-                          </Text>
-                        </View>
-                      )}
-                      {trainee.memberSince && (
-                        <View>
-                          <Text className="text-gray-400 text-xs">
-                            Member Since
-                          </Text>
-                          <Text className="text-white text-sm">
-                            {new Date(trainee.memberSince).toLocaleDateString()}
-                          </Text>
-                        </View>
-                      )}
-                      {trainee.yearsExperience !== undefined && (
-                        <View>
-                          <Text className="text-gray-400 text-xs">
-                            Years of Experience
-                          </Text>
-                          <Text className="text-white text-sm">
-                            {trainee.yearsExperience} years
-                          </Text>
-                        </View>
-                      )}
-                      {trainee.previousEmployer && (
-                        <View>
-                          <Text className="text-gray-400 text-xs">
-                            Previous Employer
-                          </Text>
-                          <Text className="text-white text-sm">
-                            {trainee.previousEmployer}
-                          </Text>
-                        </View>
-                      )}
-                      {trainee.specializations &&
-                        trainee.specializations.length > 0 && (
-                          <View className="gap-1">
-                            <Text className="text-gray-400 text-xs">
-                              Specializations
-                            </Text>
-                            <View className="flex-row flex-wrap gap-2">
-                              {trainee.specializations.map((spec, idx) => (
-                                <View
-                                  key={idx}
-                                  className="bg-blue-600/20 border border-blue-600 rounded-full px-3 py-1"
-                                >
-                                  <Text className="text-blue-400 text-xs font-semibold">
-                                    {spec}
-                                  </Text>
-                                </View>
-                              ))}
-                            </View>
+                  <View style={s.expandedWrap}>
+                    <Text style={s.sectionLbl}>Profile</Text>
+                    {trainee.phone && <DetailRow label="Phone" value={trainee.phone} />}
+                    {trainee.memberSince && <DetailRow label="Member Since" value={new Date(trainee.memberSince).toLocaleDateString()} />}
+                    {trainee.yearsExperience !== undefined && <DetailRow label="Experience" value={`${trainee.yearsExperience} years`} />}
+                    {trainee.previousEmployer && <DetailRow label="Previous Employer" value={trainee.previousEmployer} />}
+
+                    <Text style={[s.sectionLbl, { marginTop: 16 }]}>Past Evaluations</Text>
+                    {trainee.evaluations && trainee.evaluations.length > 0 ? trainee.evaluations.map((ev, idx) => {
+                      const avg = Math.round((ev.ratings.technique + ev.ratings.speed + ev.ratings.customerService + ev.ratings.safety) / 4);
+                      return (
+                        <View key={idx} style={s.evalCard}>
+                          <Text style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{new Date(ev.date).toLocaleDateString()}</Text>
+                          <View style={{ flexDirection: 'row', gap: 3, marginBottom: 6 }}>
+                            {[1, 2, 3, 4, 5].map(st => <Star key={st} size={13} color={st <= avg ? '#FFB800' : '#374151'} fill={st <= avg ? '#FFB800' : 'none'} />)}
                           </View>
-                        )}
-                    </View>
-
-                    {/* Past Evaluations */}
-                    <View className="gap-2">
-                      <Text className="text-white font-semibold text-sm">
-                        Past Evaluations
-                      </Text>
-                      {trainee.evaluations && trainee.evaluations.length > 0 ? (
-                        <View className="gap-3">
-                          {trainee.evaluations.map((evaluation: Evaluation, idx: number) => (
-                            <View
-                              key={idx}
-                              className="bg-gray-700/40 border border-gray-600 rounded-lg p-3"
-                            >
-                              <Text className="text-gray-300 text-xs mb-2">
-                                {new Date(evaluation.date).toLocaleDateString()}
-                              </Text>
-                              <View className="flex-row items-center gap-1 mb-2">
-                                {[1, 2, 3, 4, 5].map((s) => (
-                                  <Star
-                                    key={s}
-                                    size={14}
-                                    color={
-                                      s <=
-                                      Math.round(
-                                        (evaluation.ratings.technique +
-                                          evaluation.ratings.speed +
-                                          evaluation.ratings.customerService +
-                                          evaluation.ratings.safety) /
-                                          4
-                                      )
-                                        ? '#FFB800'
-                                        : '#E5E7EB'
-                                    }
-                                    fill={
-                                      s <=
-                                      Math.round(
-                                        (evaluation.ratings.technique +
-                                          evaluation.ratings.speed +
-                                          evaluation.ratings.customerService +
-                                          evaluation.ratings.safety) /
-                                          4
-                                      )
-                                        ? '#FFB800'
-                                        : 'none'
-                                    }
-                                  />
-                                ))}
-                              </View>
-                              <Text className="text-gray-300 text-xs">
-                                {evaluation.feedback}
-                              </Text>
-                            </View>
-                          ))}
+                          <Text style={{ fontSize: 13, color: '#94a3b8', lineHeight: 18 }}>{ev.feedback}</Text>
                         </View>
-                      ) : (
-                        <Text className="text-gray-400 text-xs">
-                          No evaluations submitted yet
-                        </Text>
-                      )}
-                    </View>
+                      );
+                    }) : <Text style={{ fontSize: 13, color: '#64748b' }}>No evaluations yet</Text>}
 
-                    {/* Submit Evaluation Button */}
                     {trainee.progress.isComplete ? (
-                      <View className="bg-green-900/30 border border-green-700 rounded-lg p-3">
-                        <Text className="text-green-300 text-sm font-semibold">
-                          ✓ All sessions completed
-                        </Text>
+                      <View style={s.completedBanner}>
+                        <Check size={16} color="#4ade80" />
+                        <Text style={s.completedTxt}>All sessions completed</Text>
                       </View>
                     ) : (
-                      <TouchableOpacity
-                        onPress={() => toggleFormVisible(trainee.id)}
-                        className="bg-blue-600 rounded-lg py-3 px-4"
-                        activeOpacity={0.8}
-                      >
-                        <Text className="text-white font-semibold text-center">
-                          {showForm
-                            ? 'Hide Evaluation Form'
-                            : 'Submit Evaluation'}
-                        </Text>
+                      <TouchableOpacity style={s.evalBtn} onPress={() => setShowFormForTraineeId(showForm ? null : trainee.id)}>
+                        <Text style={s.evalBtnTxt}>{showForm ? 'Hide Form' : 'Submit Evaluation'}</Text>
                       </TouchableOpacity>
                     )}
 
-                    {/* Evaluation Form */}
                     {showForm && !trainee.progress.isComplete && (
-                      <View className="bg-gray-700/40 border border-gray-600 rounded-lg p-4 gap-4 mt-2">
-                        {/* Booking ID */}
-                        <View>
-                          <Text className="text-gray-300 text-xs font-semibold mb-2">
-                            Booking ID (Optional)
-                          </Text>
-                          <TextInput
-                            placeholder="Enter booking ID (optional)"
-                            placeholderTextColor="#6B7280"
-                            value={form.bookingId}
-                            onChangeText={(text) =>
-                              updateFormState(trainee.id, 'bookingId', text)
-                            }
-                            className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                          />
-                        </View>
-
-                        {/* Star Ratings */}
-                        {RATING_CATEGORIES.map((category) => (
-                          <View key={category.key} className="gap-1">
-                            <Text className="text-white font-semibold text-sm">
-                              {category.label}
-                            </Text>
-                            <Text className="text-gray-400 text-xs">
-                              {category.description}
-                            </Text>
-                            {renderStarRating(
-                              trainee.id,
-                              category.key,
-                              form.ratings[category.key as keyof typeof form.ratings]
-                            )}
+                      <View style={s.formWrap}>
+                        <TextInput
+                          placeholder="Booking ID (optional)"
+                          placeholderTextColor="#64748b"
+                          value={form.bookingId}
+                          onChangeText={t => updateFormState(trainee.id, 'bookingId', t)}
+                          style={s.input}
+                        />
+                        {RATING_CATEGORIES.map(cat => (
+                          <View key={cat.key} style={{ marginBottom: 16 }}>
+                            <Text style={s.catLabel}>{cat.label}</Text>
+                            <Text style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>{cat.description}</Text>
+                            {renderStars(trainee.id, cat.key, form.ratings[cat.key as keyof typeof form.ratings])}
                           </View>
                         ))}
-
-                        {/* Overall Feedback */}
-                        <View>
-                          <Text className="text-white font-semibold text-sm mb-1">
-                            Overall Feedback*
-                          </Text>
-                          <TextInput
-                            placeholder="Describe the trainee's performance during this session..."
-                            placeholderTextColor="#6B7280"
-                            multiline
-                            numberOfLines={4}
-                            value={form.feedback}
-                            onChangeText={(text) =>
-                              updateFormState(trainee.id, 'feedback', text)
-                            }
-                            className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                            textAlignVertical="top"
-                          />
-                          <Text className="text-gray-400 text-xs mt-1">
-                            {form.feedback.length}/50 characters (minimum)
-                          </Text>
-                        </View>
-
-                        {/* Private Notes */}
-                        <View>
-                          <Text className="text-gray-300 text-xs font-semibold mb-1">
-                            Private Notes (not shown to trainee)
-                          </Text>
-                          <TextInput
-                            placeholder="Add private notes..."
-                            placeholderTextColor="#6B7280"
-                            multiline
-                            numberOfLines={3}
-                            value={form.notes}
-                            onChangeText={(text) =>
-                              updateFormState(trainee.id, 'notes', text)
-                            }
-                            className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                            textAlignVertical="top"
-                          />
-                        </View>
-
-                        {/* Submit Button */}
+                        <TextInput
+                          placeholder="Overall feedback (min 50 chars)..."
+                          placeholderTextColor="#64748b"
+                          multiline
+                          numberOfLines={4}
+                          value={form.feedback}
+                          onChangeText={t => updateFormState(trainee.id, 'feedback', t)}
+                          style={[s.input, { minHeight: 100, textAlignVertical: 'top' }]}
+                        />
+                        <Text style={{ fontSize: 11, color: '#64748b', textAlign: 'right', marginBottom: 8 }}>{form.feedback.length}/50 minimum</Text>
+                        <TextInput
+                          placeholder="Private notes (not shown to trainee)..."
+                          placeholderTextColor="#64748b"
+                          multiline
+                          numberOfLines={3}
+                          value={form.notes}
+                          onChangeText={t => updateFormState(trainee.id, 'notes', t)}
+                          style={[s.input, { minHeight: 80, textAlignVertical: 'top' }]}
+                        />
                         <TouchableOpacity
+                          style={[s.submitBtn, (!canSubmit || submitting) && s.submitBtnDisabled]}
                           onPress={() => submitEvaluation(trainee.id)}
                           disabled={!canSubmit || submitting}
-                          className={`rounded-lg py-3 px-4 flex-row items-center justify-center gap-2 ${
-                            canSubmit && !submitting
-                              ? 'bg-blue-600'
-                              : 'bg-gray-700'
-                          }`}
-                          activeOpacity={0.8}
                         >
-                          {submitting ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                          ) : (
-                            <>
-                              <Check size={18} color="#fff" />
-                              <Text
-                                className={`font-semibold text-center ${
-                                  canSubmit && !submitting
-                                    ? 'text-white'
-                                    : 'text-gray-400'
-                                }`}
-                              >
-                                Submit Evaluation
-                              </Text>
-                            </>
+                          {submitting ? <ActivityIndicator color="#fff" size="small" /> : (
+                            <><Check size={16} color="#fff" /><Text style={s.submitBtnTxt}>Submit Evaluation</Text></>
                           )}
                         </TouchableOpacity>
                       </View>
                     )}
                   </View>
                 )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-
-        {/* Completion Modal */}
-        <Modal
-          visible={completionModal.visible}
-          transparent
-          animationType="fade"
-          onRequestClose={() =>
-            setCompletionModal({ ...completionModal, visible: false })
-          }
-        >
-          <View className="flex-1 bg-black/60 justify-center items-center px-4">
-            <View className="bg-gray-800 rounded-lg p-6 items-center gap-4 w-full max-w-sm border border-gray-700">
-              <Text className="text-4xl">🎉</Text>
-              <Text className="text-white font-bold text-lg text-center">
-                {completionModal.traineeName} has completed all required
-                sessions!
-              </Text>
-              <Text className="text-gray-400 text-center text-sm">
-                The admin team will review their certification.
-              </Text>
-              <TouchableOpacity
-                onPress={() =>
-                  setCompletionModal({ ...completionModal, visible: false })
-                }
-                className="bg-blue-600 rounded-lg py-3 px-8 w-full"
-                activeOpacity={0.8}
-              >
-                <Text className="text-white font-semibold text-center">
-                  Done
-                </Text>
               </TouchableOpacity>
-            </View>
+            );
+          })}
+
+          <View style={{ height: 48 }} />
+        </ScrollView>
+      )}
+
+      <Modal visible={completionModal.visible} transparent animationType="fade" onRequestClose={() => setCompletionModal(m => ({ ...m, visible: false }))}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalBox}>
+            <Text style={{ fontSize: 48, textAlign: 'center' }}>🎉</Text>
+            <Text style={s.modalTitle}>{completionModal.traineeName} completed all sessions!</Text>
+            <Text style={s.modalSub}>The admin team will review their certification.</Text>
+            <TouchableOpacity style={s.modalBtn} onPress={() => setCompletionModal(m => ({ ...m, visible: false }))}>
+              <Text style={s.modalBtnTxt}>Done</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
-      </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+const ag = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0d1629' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, backgroundColor: '#1e2d4a', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  scroll: { padding: 20 },
+  hero: { alignItems: 'center', paddingVertical: 32, marginBottom: 24 },
+  heroIconCircle: { width: 96, height: 96, borderRadius: 48, backgroundColor: 'rgba(37,99,235,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  heroTitle: { fontSize: 26, fontWeight: '800', color: '#fff', marginBottom: 10 },
+  heroSub: { fontSize: 15, color: '#94a3b8', textAlign: 'center', lineHeight: 22, paddingHorizontal: 12 },
+  card: { backgroundColor: '#1e2d4a', borderRadius: 18, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 14 },
+  cardSub: { fontSize: 13, color: '#64748b', marginBottom: 14 },
+  benefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 12 },
+  benefitText: { flex: 1, fontSize: 14, color: '#94a3b8', lineHeight: 20 },
+  pointRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 12 },
+  pointDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(37,99,235,0.3)', justifyContent: 'center', alignItems: 'center', flexShrink: 0, marginTop: 1 },
+  pointNum: { fontSize: 11, fontWeight: '700', color: '#60a5fa' },
+  pointText: { flex: 1, fontSize: 13, color: '#94a3b8', lineHeight: 20 },
+  checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 24, padding: 16, backgroundColor: '#1e2d4a', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(37,99,235,0.3)' },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#2563eb', justifyContent: 'center', alignItems: 'center', flexShrink: 0, marginTop: 1 },
+  checkboxChecked: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  checkLabel: { flex: 1, fontSize: 14, color: '#fff', lineHeight: 20 },
+  acceptBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#2563eb', borderRadius: 16, paddingVertical: 18, marginBottom: 14 },
+  acceptBtnDisabled: { opacity: 0.5 },
+  acceptBtnText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  disclaimer: { fontSize: 12, color: '#64748b', textAlign: 'center', lineHeight: 18 },
+});
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#0d1629' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, backgroundColor: '#1e2d4a', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  countBadge: { backgroundColor: '#2563eb', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, minWidth: 28, alignItems: 'center' },
+  countBadgeTxt: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  scrollContent: { padding: 16, paddingBottom: 48 },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' },
+  errorText: { flex: 1, fontSize: 13, color: '#fca5a5' },
+  mentorBadge: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(37,99,235,0.12)', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(37,99,235,0.25)' },
+  mentorBadgeTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  mentorBadgeSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  mentorDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#22c55e' },
+  emptyCard: { backgroundColor: '#1e2d4a', borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  emptyTitle: { fontSize: 15, fontWeight: '600', color: '#94a3b8', marginBottom: 4 },
+  emptySub: { fontSize: 13, color: '#64748b', textAlign: 'center' },
+  traineeCard: { backgroundColor: '#1e2d4a', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  traineeTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  traineeLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  avatar: { width: 48, height: 48, borderRadius: 24 },
+  avatarFallback: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2563eb', justifyContent: 'center', alignItems: 'center' },
+  avatarInitials: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  traineeName: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  traineeEmail: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusCert: { backgroundColor: 'rgba(74,222,128,0.1)' },
+  statusTrain: { backgroundColor: 'rgba(251,191,36,0.1)' },
+  statusTxt: { fontSize: 12, fontWeight: '600' },
+  progressBg: { height: 6, backgroundColor: '#0d1629', borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#2563eb', borderRadius: 4 },
+  expandedWrap: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
+  sectionLbl: { fontSize: 13, fontWeight: '700', color: '#fff', marginBottom: 10 },
+  evalCard: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  completedBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(74,222,128,0.1)', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(74,222,128,0.2)', marginTop: 14 },
+  completedTxt: { fontSize: 13, fontWeight: '600', color: '#4ade80' },
+  evalBtn: { backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 14 },
+  evalBtnTxt: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  formWrap: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  input: { backgroundColor: '#0d1629', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 12 },
+  catLabel: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
+  submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14, marginTop: 8 },
+  submitBtnDisabled: { opacity: 0.5 },
+  submitBtnTxt: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalBox: { backgroundColor: '#1e2d4a', borderRadius: 20, padding: 28, alignItems: 'center', gap: 12, width: '100%', maxWidth: 340, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  modalSub: { fontSize: 13, color: '#64748b', textAlign: 'center' },
+  modalBtn: { backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, marginTop: 8 },
+  modalBtnTxt: { fontSize: 15, fontWeight: '700', color: '#fff' },
+});

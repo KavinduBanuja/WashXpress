@@ -13,7 +13,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { db } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -95,6 +95,29 @@ export default function WasherHome() {
     const [bookings, setBookings] = useState<BookingDoc[]>([]);
     const [loading, setLoading] = useState(true);
     const [accepting, setAccepting] = useState<string | null>(null);
+    const [hasPendingTrainees, setHasPendingTrainees] = useState(false);
+
+    // for mentorship program 
+
+    useEffect(() => {
+    const checkTrainees = async () => {
+        try {
+            const user = auth.currentUser;
+            if (!user) return;
+            const token = await user.getIdToken(true);
+            const res = await fetch(
+                `${process.env.EXPO_PUBLIC_PROVIDER_API_URL}/certification/my-trainees`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (res.ok) {
+                const data = await res.json();
+                const trainees = data.data?.trainees || [];
+                setHasPendingTrainees(trainees.some((t: any) => !t.progress.isComplete));
+            }
+        } catch { /* non-fatal */ }
+    };
+    checkTrainees();
+}, []);
 
     // ── Runtime Verification Guard ───────────────────────────────────────────
     useEffect(() => {
@@ -275,6 +298,25 @@ export default function WasherHome() {
                         </View>
                     ))}
                 </View>
+
+                {/* ── Mentorship Banner ── */}
+                <TouchableOpacity
+                    style={styles.mentorshipBtn}
+                    onPress={() => router.push('/washer-mentorship' as any)}
+                    activeOpacity={0.85}
+                >
+                    <View style={styles.mentorshipLeft}>
+                        <Text style={{ fontSize: 24 }}>🎓</Text>
+                        <View>
+                            <Text style={styles.mentorshipTitle}>Mentorship Program</Text>
+                            <Text style={styles.mentorshipSub}>Train and evaluate new washers</Text>
+                        </View>
+                    </View>
+                    <View style={styles.mentorshipRight}>
+                        {hasPendingTrainees && <View style={styles.mentorRedDot} />}
+                        <Ionicons name="chevron-forward" size={18} color="#64748b" />
+                    </View>
+                </TouchableOpacity>
 
                 {/* ── Available Jobs ── */}
                 <View style={[styles.section, { backgroundColor: colors.background }]}>
@@ -478,7 +520,14 @@ const styles = StyleSheet.create({
     statValue: { fontSize: 20, fontWeight: '700', marginTop: 6 },
     statLabel: { fontSize: 11, marginTop: 2 },
 
-    // Section
+    mentorshipBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e2d4a', borderRadius: 16, padding: 16, marginHorizontal: 16, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(37,99,235,0.25)' },
+    mentorshipLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    mentorshipTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
+    mentorshipSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+    mentorshipRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    mentorRedDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#ef4444' },
+
+    // Section 
     section: { paddingHorizontal: 16, marginTop: 16 },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
     sectionTitle: { fontSize: 18, fontWeight: '700' },
