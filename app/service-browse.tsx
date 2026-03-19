@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
@@ -56,7 +57,6 @@ export default function ServiceBrowseScreen() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryParam || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -68,8 +68,7 @@ export default function ServiceBrowseScreen() {
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'duration'>('price_asc');
 
   useEffect(() => { loadData(); }, []);
-  useEffect(() => { if (categoryParam) setSelectedCategory(categoryParam); }, [categoryParam]);
-  useEffect(() => { applyFilters(); }, [services, selectedCategory, searchQuery, minPrice, maxPrice, sortBy]);
+  useEffect(() => { if (categoryParam) setSelectedCategory(categoryParam || null); }, [categoryParam]);
 
   const loadData = async () => {
     try {
@@ -82,6 +81,7 @@ export default function ServiceBrowseScreen() {
     }
   };
 
+  // Categories & Services data loading
   const loadCategories = async () => {
     try {
       const data = await apiFetch('/services/categories', { requiresAuth: false }, 'customer');
@@ -100,7 +100,8 @@ export default function ServiceBrowseScreen() {
     }
   };
 
-  const applyFilters = () => {
+  // 🔥 Optimized Filtering with useMemo
+  const filteredServices = React.useMemo(() => {
     let filtered = [...services];
 
     if (selectedCategory) filtered = filtered.filter(s => s.categoryId === selectedCategory);
@@ -119,8 +120,8 @@ export default function ServiceBrowseScreen() {
       return a.duration - b.duration;
     });
 
-    setFilteredServices(filtered);
-  };
+    return filtered;
+  }, [services, selectedCategory, searchQuery, minPrice, maxPrice, sortBy]);
 
   const clearFilters = () => {
     setSelectedCategory(null);
@@ -128,6 +129,37 @@ export default function ServiceBrowseScreen() {
     setMinPrice('');
     setMaxPrice('');
     setSortBy('price_asc');
+  };
+
+  // ── Render Helpers ─────────────────────────────────────
+  const renderServiceItem = ({ item: service }: { item: Service }) => {
+    const meta = getServiceMeta(service.categoryId);
+    return (
+      <TouchableOpacity 
+        style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
+        onPress={() => router.push(`/service-details?id=${service.id}`)}
+      >
+        <View style={[styles.cardIcon, { backgroundColor: meta.color + '18' }]}>
+          <Ionicons name={meta.icon} size={28} color={meta.color} />
+        </View>
+
+        <View style={styles.cardInfo}>
+          <Text style={[styles.cardName, { color: colors.textPrimary }]}>{service.name}</Text>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+            {service.description || meta.description}
+          </Text>
+          <View style={styles.cardMeta}>
+            <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+            <Text style={[styles.cardMetaText, { color: colors.textSecondary }]}>~{service.duration} min</Text>
+          </View>
+        </View>
+
+        <View style={styles.cardRight}>
+          <Text style={[styles.cardPrice, { color: colors.textPrimary }]}>LKR {service.price.toLocaleString()}</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} style={{ marginTop: 4 }} />
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   if (loading) {
@@ -141,7 +173,6 @@ export default function ServiceBrowseScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <Header
         title="Browse Services"
         rightElement={
@@ -151,7 +182,6 @@ export default function ServiceBrowseScreen() {
         }
       />
 
-      {/* Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
         <Ionicons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 10 }} />
         <TextInput
@@ -168,26 +198,29 @@ export default function ServiceBrowseScreen() {
         )}
       </View>
 
-      {/* Category chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        style={{ maxHeight: 52 }} contentContainerStyle={styles.categoriesContent}>
-        <TouchableOpacity
-          style={[styles.chip, !selectedCategory && styles.chipActive]}
-          onPress={() => setSelectedCategory(null)}>
-          <Text style={[styles.chipText, !selectedCategory && styles.chipTextActive]}>All</Text>
-        </TouchableOpacity>
-        {categories.map(cat => (
-          <TouchableOpacity key={cat.id}
-            style={[styles.chip, { backgroundColor: colors.cardBackground, borderColor: colors.border }, selectedCategory === cat.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-            onPress={() => setSelectedCategory(cat.id)}>
-            <Text style={[styles.chipText, { color: colors.textSecondary }, selectedCategory === cat.id && { color: '#fff', fontWeight: '600' }]}>
-              {cat.name}
-            </Text>
+      <View style={{ height: 52 }}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          <TouchableOpacity
+            style={[styles.chip, !selectedCategory && styles.chipActive]}
+            onPress={() => setSelectedCategory(null)}>
+            <Text style={[styles.chipText, !selectedCategory && styles.chipTextActive]}>All</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {categories.map(cat => (
+            <TouchableOpacity key={cat.id}
+              style={[styles.chip, { backgroundColor: colors.cardBackground, borderColor: colors.border }, selectedCategory === cat.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+              onPress={() => setSelectedCategory(cat.id)}>
+              <Text style={[styles.chipText, { color: colors.textSecondary }, selectedCategory === cat.id && { color: '#fff', fontWeight: '600' }]}>
+                {cat.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
-      {/* Results count */}
       <View style={styles.resultsRow}>
         <Text style={styles.resultsCount}>{filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}</Text>
         {(minPrice || maxPrice || selectedCategory) && (
@@ -197,47 +230,22 @@ export default function ServiceBrowseScreen() {
         )}
       </View>
 
-      {/* Services */}
-      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 110 }}>
-        {filteredServices.length === 0 ? (
+      {/* 🔥 Optimized Scroll List using FlatList */}
+      <FlatList
+        data={filteredServices}
+        keyExtractor={item => item.id}
+        renderItem={renderServiceItem}
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={56} color="#cbd5e1" />
             <Text style={styles.emptyTitle}>No services found</Text>
             <Text style={styles.emptySub}>Try adjusting your filters</Text>
           </View>
-        ) : (
-          filteredServices.map(service => {
-            const meta = getServiceMeta(service.categoryId);
-            return (
-              <TouchableOpacity key={service.id} style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
-                onPress={() => router.push(`/service-details?id=${service.id}`)}>
-                {/* Icon */}
-                <View style={[styles.cardIcon, { backgroundColor: meta.color + '18' }]}>
-                  <Ionicons name={meta.icon} size={28} color={meta.color} />
-                </View>
-
-                {/* Info */}
-                <View style={styles.cardInfo}>
-                  <Text style={[styles.cardName, { color: colors.textPrimary }]}>{service.name}</Text>
-                  <Text style={[styles.cardDesc, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {service.description || meta.description}
-                  </Text>
-                  <View style={styles.cardMeta}>
-                    <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
-                    <Text style={[styles.cardMetaText, { color: colors.textSecondary }]}>~{service.duration} min</Text>
-                  </View>
-                </View>
-
-                {/* Price */}
-                <View style={styles.cardRight}>
-                  <Text style={[styles.cardPrice, { color: colors.textPrimary }]}>LKR {service.price.toLocaleString()}</Text>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} style={{ marginTop: 4 }} />
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </ScrollView>
+        }
+      />
 
       {/* Filter Modal */}
       <Modal visible={showFilters} animationType="slide" transparent onRequestClose={() => setShowFilters(false)}>

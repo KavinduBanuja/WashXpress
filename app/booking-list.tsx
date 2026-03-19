@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Animated,
+    FlatList,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -62,14 +63,14 @@ export default function BookingListScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const tabAnim = useRef(new Animated.Value(0)).current;
 
-    const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+    const STATUS_CONFIG = React.useMemo(() => ({
         pending: { label: 'Finding Washer', color: colors.warning || '#f59e0b', bg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fffbeb', icon: 'time-outline' },
         confirmed: { label: 'Confirmed', color: colors.accent || '#0ca6e8', bg: isDark ? 'rgba(12, 166, 232, 0.15)' : '#e0f4fd', icon: 'checkmark-circle-outline' },
         in_progress: { label: 'In Progress', color: '#8b5cf6', bg: isDark ? 'rgba(139, 92, 246, 0.15)' : '#f5f3ff', icon: 'water-outline' },
         completed: { label: 'Completed', color: colors.success || '#10b981', bg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#f0fdf4', icon: 'trophy-outline' },
         cancelled: { label: 'Cancelled', color: colors.textSecondary || '#6b7280', bg: isDark ? 'rgba(107, 114, 128, 0.15)' : '#f9fafb', icon: 'close-circle-outline' },
         rejected: { label: 'Rejected', color: colors.error || '#ef4444', bg: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2', icon: 'ban-outline' },
-    };
+    }), [colors, isDark]);
 
     const load = useCallback(async (silent = false) => {
         try {
