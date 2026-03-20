@@ -28,7 +28,6 @@ export default function EditProfileScreen() {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [area, setArea] = useState('');
-    const [photoURL, setPhotoURL] = useState('');
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -39,7 +38,6 @@ export default function EditProfileScreen() {
             setPhoneNumber(profile.phoneNumber || '');
             setDisplayName(profile.displayName || '');
             setArea(profile.area || '');
-            setPhotoURL(profile.photoURL || '');
         }
     }, [profile]);
 
@@ -62,7 +60,6 @@ export default function EditProfileScreen() {
             lastName: lastName.trim(),
             phoneNumber: phoneNumber.trim(),
             displayName: finalDisplayName,
-            photoURL: photoURL.trim(),
         };
 
         if (userType === 'provider') {
@@ -108,17 +105,6 @@ export default function EditProfileScreen() {
                         value={displayName}
                         onChangeText={setDisplayName}
                         placeholder="How should we call you?"
-                        placeholderTextColor={colors.inputPlaceholder}
-                    />
-                </View>
-                
-                <View style={styles.formGroup}>
-                    <Text style={[styles.label, { color: colors.textPrimary }]}>Profile Picture URL</Text>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: colors.cardBackground, color: colors.textPrimary, borderColor: colors.border }]}
-                        value={photoURL}
-                        onChangeText={setPhotoURL}
-                        placeholder="https://example.com/photo.jpg"
                         placeholderTextColor={colors.inputPlaceholder}
                     />
                 </View>
