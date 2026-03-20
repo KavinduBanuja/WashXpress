@@ -48,9 +48,9 @@ const PRODUCTS: Product[] = [
     { id: '10', name: 'Microfiber Towel Set', description: '20-pack premium quality, ultra-soft', price: 800, rating: 4.9, reviews: 1234, image: require('../assets/marketplace/microfiber_towel_set.jpg'), category: 'Tools & Accessories', unit: '20 pack' },
     { id: '11', name: 'Detailing Brush Set', description: '15-piece set for all surfaces', price: 1200, rating: 4.7, reviews: 567, image: require('../assets/marketplace/detailing_brush_kit.jpg'), category: 'Tools & Accessories', unit: '15 pieces' },
     { id: '12', name: 'Foam Applicator Pads', description: 'Contoured design, 6-pack', price: 700, rating: 4.6, reviews: 389, image: require('../assets/marketplace/foam_applicator_pads.jpg'), category: 'Tools & Accessories', unit: '6 pack' },
-    { id: '13', name: 'Wheel Brush Set', description: 'Long-reach design, soft bristles', price: 22.99, rating: 4.8, reviews: 445, image: require('../assets/marketplace/wheel_brush_set.png'), category: 'Tools & Accessories', unit: '3 pack' },
-    { id: '14', name: 'Paint Sealant', description: '6-month protection, UV resistant', price: 49.99, rating: 4.9, reviews: 678, image: require('../assets/marketplace/paint_sealent.png'), category: 'Protection Products', unit: '12 oz' },
-    { id: '15', name: 'Leather Conditioner', description: 'Restores & protects, natural oils', price: 26.99, rating: 4.7, reviews: 423, image: require('../assets/marketplace/leather_conditioner.jpg'), category: 'Protection Products', unit: '16 oz' },
+    { id: '13', name: 'Car Wheel and Rim Detailing Brush Set', description: 'Long-reach design, soft bristles', price: 500, rating: 4.8, reviews: 445, image: require('../assets/marketplace/wheel_brush_set.png'), category: 'Tools & Accessories', unit: '4 pieces' },
+    { id: '14', name: 'Polymer Paint Sealant', description: '6-month protection, UV resistant', price: 15000, rating: 4.9, reviews: 678, image: require('../assets/marketplace/paint_sealent.png'), category: 'Protection Products', unit: '500 ml' },
+    { id: '15', name: 'Turtle Wax Luxe Leather Cleaner & Conditioner', description: 'Restores & protects, natural oils', price: 2500, rating: 4.7, reviews: 423, image: require('../assets/marketplace/leather_conditioner.jpg'), category: 'Protection Products', unit: '500 ml' },
 ];
 
 const CATEGORIES = [
