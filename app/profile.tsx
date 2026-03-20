@@ -15,7 +15,10 @@ import {
   TouchableOpacity,
   View,
   Switch,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
+import ImageViewing from 'react-native-image-viewing';
 import { Header } from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -60,29 +63,15 @@ export default function ProfileScreen() {
     }
   };
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
+  const [isActionSheetVisible, setIsActionSheetVisible] = useState(false);
 
-  const handlePhotoUpload = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Please allow photo library access.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images' as const,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (result.canceled) return;
-
+  const processImageUpload = async (uri: string) => {
     setUploadingPhoto(true);
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Not authenticated');
 
-      const uri = result.assets[0].uri;
       const response = await fetch(uri);
       const blob = await response.blob();
 
@@ -107,7 +96,81 @@ export default function ProfileScreen() {
       Alert.alert('Error', e.message || 'Failed to upload photo');
     } finally {
       setUploadingPhoto(false);
+      setIsActionSheetVisible(false);
     }
+  };
+
+  const handleLibrarySelection = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow photo library access.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images' as const,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setIsActionSheetVisible(false);
+      await processImageUpload(result.assets[0].uri);
+    }
+  };
+
+  const handleCameraCapture = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow camera access.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: 'images' as const,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setIsActionSheetVisible(false);
+      await processImageUpload(result.assets[0].uri);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    Alert.alert('Remove Photo', 'Are you sure you want to remove your profile picture?', [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Remove', 
+        style: 'destructive',
+        onPress: async () => {
+          setIsActionSheetVisible(false);
+          setUploadingPhoto(true);
+          try {
+            const user = auth.currentUser;
+            if (!user) throw new Error('Not authenticated');
+            
+            await updateProfile(user, { photoURL: "" });
+
+            const endpoint = userType === 'customer' ? '/profile' : '/auth/profile';
+            await apiFetch(endpoint, {
+              method: 'PATCH',
+              body: JSON.stringify({ photoURL: null }),
+            }, userType === 'customer' ? 'customer' : 'provider');
+      
+            await refetch();
+            Alert.alert('Success', 'Profile photo removed.');
+          } catch (e: any) {
+             Alert.alert('Error', e.message || 'Failed to remove photo');
+          } finally {
+            setUploadingPhoto(false);
+          }
+        }
+      }
+    ]);
   };
 
   const handleSignOut = () => {
@@ -202,22 +265,35 @@ export default function ProfileScreen() {
 
         {/* ── Avatar Section ── */}
         <View style={styles.avatarSection}>
-          <TouchableOpacity onPress={handlePhotoUpload} disabled={uploadingPhoto} style={styles.avatarWrapper}>
-            <View style={[styles.avatarContainer, { backgroundColor: colors.accentLight, borderColor: colors.cardBackground }]}>
-              {profile?.photoURL ? (
-                <Image source={{ uri: profile.photoURL }} style={styles.avatarImage} />
-              ) : (
-                <Ionicons name="person" size={48} color={colors.accent} />
-              )}
-            </View>
+          <View style={styles.avatarWrapper}>
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              disabled={uploadingPhoto}
+              onPress={() => {
+                if(profile?.photoURL) setIsImageViewerVisible(true);
+                else setIsActionSheetVisible(true);
+              }}
+            >
+              <View style={[styles.avatarContainer, { backgroundColor: colors.accentLight, borderColor: colors.cardBackground }]}>
+                {profile?.photoURL ? (
+                  <Image source={{ uri: profile.photoURL }} style={styles.avatarImage} />
+                ) : (
+                  <Ionicons name="person" size={48} color={colors.accent} />
+                )}
+              </View>
+            </TouchableOpacity>
 
-            <View style={[styles.cameraBadge, { backgroundColor: colors.accent }]}>
+            <TouchableOpacity 
+              style={[styles.cameraBadge, { backgroundColor: colors.accent }]}
+              onPress={() => setIsActionSheetVisible(true)}
+              disabled={uploadingPhoto}
+            >
               {uploadingPhoto
                 ? <ActivityIndicator size="small" color="#fff" />
                 : <Ionicons name="camera" size={14} color="#fff" />
               }
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
 
   <Text style={[styles.userName, { color: colors.textPrimary }]}>{getUserName()}</Text>
 
@@ -403,6 +479,51 @@ export default function ProfileScreen() {
           <Text style={[styles.logoutText, { color: colors.error }]}>Sign Out</Text>
         </TouchableOpacity>
       </View>
+
+      {/* ── Photo Action Sheet ── */}
+      <Modal visible={isActionSheetVisible} transparent animationType="fade" onRequestClose={() => setIsActionSheetVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setIsActionSheetVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.actionSheet, { backgroundColor: colors.cardBackground }]}>
+                {profile?.photoURL && (
+                   <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]} onPress={() => { setIsActionSheetVisible(false); setIsImageViewerVisible(true); }}>
+                     <Ionicons name="image-outline" size={20} color={colors.textPrimary} style={{ marginRight: 12 }} />
+                     <Text style={[styles.actionText, { color: colors.textPrimary }]}>View Profile Picture</Text>
+                   </TouchableOpacity>
+                )}
+                <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]} onPress={handleLibrarySelection}>
+                  <Ionicons name="images-outline" size={20} color={colors.textPrimary} style={{ marginRight: 12 }} />
+                  <Text style={[styles.actionText, { color: colors.textPrimary }]}>Choose from Gallery</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]} onPress={handleCameraCapture}>
+                  <Ionicons name="camera-outline" size={20} color={colors.textPrimary} style={{ marginRight: 12 }} />
+                  <Text style={[styles.actionText, { color: colors.textPrimary }]}>Take a Photo</Text>
+                </TouchableOpacity>
+                {profile?.photoURL && (
+                   <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]} onPress={handleRemovePhoto}>
+                     <Ionicons name="trash-outline" size={20} color={colors.error} style={{ marginRight: 12 }} />
+                     <Text style={[styles.actionText, { color: colors.error }]}>Remove Profile Picture</Text>
+                   </TouchableOpacity>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* ── Full Screen Image Viewer ── */}
+      {profile?.photoURL && (
+        <ImageViewing
+           images={[{ uri: profile.photoURL }]}
+           imageIndex={0}
+           visible={isImageViewerVisible}
+           onRequestClose={() => setIsImageViewerVisible(false)}
+           swipeToCloseEnabled={true}
+           doubleTapToZoomEnabled={true}
+           animationType="fade"
+         />
+      )}
     </View>
   );
 }
@@ -467,4 +588,9 @@ const styles = StyleSheet.create({
   footer: { padding: 20, paddingBottom: Platform.OS === 'ios' ? 108 : 88, borderTopWidth: 1 },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 12, borderWidth: 1 },
   logoutText: { fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  actionSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20 },
+  actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  actionText: { fontSize: 16, fontWeight: '500' },
 });
