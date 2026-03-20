@@ -12,6 +12,7 @@ import {
     Text,
     TouchableOpacity,
     View,
+    Image,
 } from 'react-native';
 import { auth, db } from '../firebaseConfig';
 
@@ -257,7 +258,13 @@ export default function WasherHome() {
                             style={[styles.profileBtn, { backgroundColor: colors.background }]}
                             onPress={() => router.push('/profile' as any)}
                         >
-                            <Ionicons name="person-outline" size={22} color={colors.accent} />
+                            {washerProfile?.photoURL ? (
+                                <Image source={{ uri: washerProfile.photoURL }} style={{ width: 44, height: 44, borderRadius: 22 }} />
+                            ) : user?.photoURL ? (
+                                <Image source={{ uri: user.photoURL }} style={{ width: 44, height: 44, borderRadius: 22 }} />
+                            ) : (
+                                <Ionicons name="person-outline" size={22} color={colors.accent} />
+                            )}
                         </TouchableOpacity>
                     </View>
 
