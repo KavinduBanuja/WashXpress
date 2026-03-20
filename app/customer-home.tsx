@@ -1,7 +1,6 @@
 import { apiFetch } from '@/services/apiClient';
 import { getProfileFromFirebase } from '@/services/authService';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Href, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
@@ -252,7 +251,7 @@ export default function CustomerHomeScreen() {
                 <TouchableOpacity
                   key={vehicle.id}
                   style={[styles.vehicleCard, { backgroundColor: colors.cardBackground }]}
-                  onPress={() => router.push(`/vehicle-details?id=${vehicle.id}` as Href)}
+                  onPress={() => router.push(`/add-vehicle?vehicleId=${vehicle.id}&edit=true` as Href)}
                 >
                   <Ionicons name="car-sport" size={28} color={colors.accent} />
                   <Text style={[styles.vehicleName, { color: colors.textPrimary }]}>{vehicle.nickname}</Text>
