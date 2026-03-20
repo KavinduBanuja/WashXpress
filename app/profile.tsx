@@ -69,7 +69,7 @@ export default function ProfileScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images' as const,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -96,7 +96,7 @@ export default function ProfileScreen() {
 
       // Update backend
       await apiFetch('/profile', {
-        method: 'PUT',
+        method: 'PATCH',
         body: JSON.stringify({ photoURL: downloadURL }),
       }, userType === 'customer' ? 'customer' : 'provider');
 
