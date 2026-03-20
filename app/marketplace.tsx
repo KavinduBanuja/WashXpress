@@ -36,7 +36,7 @@ interface CartItem {
 
 // ── Mock Data ────────────────────────────────────────────
 const PRODUCTS: Product[] = [
-    { id: '1', name: 'Premium Car Wash Soap', description: 'pH-balanced formula, safe for all finishes', price: 24.99, rating: 4.8, reviews: 342, image: require('../assets/marketplace/car_wash_soap.jpg'), category: 'Cleaning Solutions', unit: '1 Gallon' },
+    { id: '1', name: 'Britol Car Liquid 500 ml', description: 'pH-balanced formula, safe for all finishes', price: 500, rating: 4.8, reviews: 342, image: require('../assets/marketplace/car_wash_soap.jpg'), category: 'Cleaning Solutions', unit: '500 ml' },
     { id: '2', name: 'Ceramic Coating Spray', description: 'Long-lasting protection, hydrophobic finish', price: 39.99, rating: 4.9, reviews: 523, image: require('../assets/marketplace/Ceramic_coating_spray.avif'), category: 'Cleaning Solutions', unit: '16 oz' },
     { id: '3', name: 'Tire Shine Gel', description: 'Non-greasy formula, UV protection', price: 16.99, rating: 4.6, reviews: 287, image: require('../assets/marketplace/tire_shining_gel.jpg'), category: 'Cleaning Solutions', unit: '32 oz' },
     { id: '4', name: 'Glass Cleaner Pro', description: 'Streak-free shine, ammonia-free', price: 12.99, rating: 4.7, reviews: 456, image: require('../assets/marketplace/glass_cleaner_pro.png'), category: 'Cleaning Solutions', unit: '24 oz' },
