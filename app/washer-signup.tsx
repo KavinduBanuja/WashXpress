@@ -79,7 +79,7 @@ export default function WasherSignupScreen() {
   };
 
   // ── Final Submit ────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
     if (!isStep3Valid) {
       Alert.alert('Error', 'Please select at least one service area');
       return;
@@ -121,17 +121,28 @@ export default function WasherSignupScreen() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Registration succeeded — no auto-login for washers since they need
-      // admin approval before accessing the app
-      Alert.alert(
-        'Application Submitted! 🎉',
-        hasExperience
-          ? 'Your professional experience is under review by our admin team. You will be notified once approved.'
-          : certificationPath === 'field_certification'
-            ? 'You will be assigned mentors for field certification. Complete 6 evaluations to get certified.'
-            : 'You will be assigned to a training center. Our team will contact you shortly.',
-        [{ text: 'Back to Login', onPress: () => router.replace('/login') }]
-      );
+      // Send verification email (non-fatal)
+      try {
+        await fetch(`${PROVIDER_API_URL}/auth/send-verification-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+      } catch (e) {
+        console.warn('Failed to send verification email (non-fatal):', e);
+      }
+
+      // Navigate to email verification screen
+      // Washer nextRoute is /login since they need admin approval before accessing the app
+      router.replace({
+        pathname: '/email-verification',
+        params: {
+          email,
+          userType: 'provider',
+          nextRoute: '/login',
+        },
+      } as any);
+
     } catch (error: any) {
       console.error('❌ Washer signup error:', error);
       Alert.alert('Registration Failed', error.message || 'Failed to register. Please try again.');

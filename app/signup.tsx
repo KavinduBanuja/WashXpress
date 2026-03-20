@@ -171,7 +171,6 @@ export default function SignupScreen() {
     let addressSaved = false;
 
     try {
-      // FIX: route is /addresses not /profile/addresses
       await apiFetch('/addresses', {
         method: 'POST',
         body: JSON.stringify({
@@ -190,28 +189,38 @@ export default function SignupScreen() {
     } catch (error: any) {
       console.error('❌ Address save error:', error);
       // Non-fatal — account already created, continue anyway
-    } finally {
-      setLoading(false);
     }
 
-    // FIX: set auth AFTER all API calls are done to prevent premature navigation
+    // Set auth AFTER all API calls to prevent premature navigation
     if (authToken && registeredUser) {
       await setAuth(authToken, 'customer', registeredUser);
     }
 
-    if (addressSaved) {
-      Alert.alert(
-        'Welcome to WashXpress! 🎉',
-        'Your account has been created successfully.',
-        [{ text: 'Get Started', onPress: () => router.replace('/customer-home' as any) }]
-      );
-    } else {
-      Alert.alert(
-        'Almost there!',
-        'Account created but address could not be saved. You can add it later from your profile.',
-        [{ text: 'Continue', onPress: () => router.replace('/customer-home' as any) }]
-      );
+    // Send verification email
+    try {
+      await fetch(`${process.env.EXPO_PUBLIC_CUSTOMER_API_URL}/auth/send-verification-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ email }),
+      });
+    } catch (e) {
+      console.warn('Failed to send verification email (non-fatal):', e);
+    } finally {
+      setLoading(false);
     }
+
+    // Navigate to email verification screen
+    router.replace({
+      pathname: '/email-verification',
+      params: {
+        email,
+        userType: 'customer',
+        nextRoute: '/customer-home',
+      },
+    } as any);
   };
 
   const handleSkipAddress = () => {
@@ -223,11 +232,32 @@ export default function SignupScreen() {
         {
           text: 'Skip',
           onPress: async () => {
-            // Still need to finalise auth even when skipping
             if (authToken && registeredUser) {
               await setAuth(authToken, 'customer', registeredUser);
             }
-            router.replace('/customer-home' as any);
+
+            // Still send verification email even when skipping address
+            try {
+              await fetch(`${process.env.EXPO_PUBLIC_CUSTOMER_API_URL}/auth/send-verification-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${authToken}`,
+                },
+                body: JSON.stringify({ email }),
+              });
+            } catch (e) {
+              console.warn('Failed to send verification email (non-fatal):', e);
+            }
+
+            router.replace({
+              pathname: '/email-verification',
+              params: {
+                email,
+                userType: 'customer',
+                nextRoute: '/customer-home',
+              },
+            } as any);
           },
         },
       ]
