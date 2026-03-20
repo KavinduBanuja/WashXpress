@@ -87,7 +87,7 @@ export default function WasherBookingDetailsScreen() {
             setLoading(true);
             const res = await apiFetch(`/bookings/${bookingId}`, {}, 'provider');
             if (res.success) {
-                setBooking(res.data.booking);
+                setBooking(res.booking || res.data?.booking);
             } else {
                 Alert.alert('Error', 'Booking not found');
                 router.back();
