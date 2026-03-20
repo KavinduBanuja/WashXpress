@@ -107,10 +107,17 @@ export default function RateBookingScreen() {
     }, []);
 
     const loadBooking = async () => {
+        if (!bookingId) {
+            console.error('No booking ID provided to Reviews&RatingsScreen');
+            setLoadingBooking(false);
+            return;
+        }
+
         try {
             const res = await apiFetch(`/bookings/${bookingId}`, {}, 'customer');
             if (res.success) {
-              setBooking(res.data?.booking ?? res.booking ?? res.data);}
+              setBooking(res.data?.booking ?? res.booking ?? res.data);
+            }
         } catch (e) {
             console.error('Load booking for rating error:', e);
         } finally {
@@ -165,6 +172,24 @@ export default function RateBookingScreen() {
     if (loadingBooking) return (
         <View style={[s.center, { backgroundColor: colors.background }]}>
             <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+    );
+
+    if (!bookingId || (!booking && !loadingBooking)) return (
+        <View style={[s.center, { backgroundColor: colors.background, padding: 20 }]}>
+            <Ionicons name="alert-circle-outline" size={64} color={colors.error || '#ef4444'} />
+            <Text style={[s.sectionTitle, { color: colors.textPrimary, marginTop: 16, textAlign: 'center' }]}>
+                Booking Not Found
+            </Text>
+            <Text style={[s.washerLabel, { color: colors.textSecondary, textAlign: 'center', marginBottom: 24 }]}>
+                We couldn't retrieve the booking details. Please try again from your booking history.
+            </Text>
+            <TouchableOpacity 
+                style={[s.submitBtn, { backgroundColor: colors.accent, width: '100%' }]} 
+                onPress={() => router.back()}
+            >
+                <Text style={s.submitBtnTxt}>Go Back</Text>
+            </TouchableOpacity>
         </View>
     );
 

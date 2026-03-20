@@ -301,7 +301,7 @@ function BookingCard({
                 <View style={[s.historyActionRow, { borderTopColor: colors.divider }]}>
                     <TouchableOpacity 
                         style={[s.historyActionBtn, { backgroundColor: colors.accent }]}
-                        onPress={() => router.push('/Reviews&RatingsScreen')}
+                        onPress={() => router.push({ pathname: '/Reviews&RatingsScreen', params: { id: booking.id } } as any)}
                     >
                         <Ionicons name="star-outline" size={14} color="#fff" />
                         <Text style={s.historyActionTxt}>Rate & Review</Text>
