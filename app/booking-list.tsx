@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -7,12 +9,10 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { apiFetch } from '../services/apiClient';
 import { useTheme } from '../context/ThemeContext';
+import { apiFetch } from '../services/apiClient';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Booking {
@@ -33,11 +33,11 @@ interface Booking {
 // ─── Constants ────────────────────────────────────────────────────────────────
 // STATUS_CONFIG is now moved inside the component to use theme colors
 
-const CATEGORY_EMOJI: Record<string, string> = {
-    'exterior-wash': '🚿',
-    'interior-clean': '🧹',
-    'tire-cleaning': '⚙️',
-    'full-detail': '✨',
+const CATEGORY_ICONS: Record<string, { icon: string; color: string; description: string }> = {
+    'exterior-wash': { icon: 'water-outline', color: '#0ca6e8', description: 'Full exterior body wash & dry' },
+    'interior-clean': { icon: 'sparkles-outline', color: '#7c3aed', description: 'Deep interior vacuum & wipe down' },
+    'tire-cleaning': { icon: 'ellipse-outline', color: '#d97706', description: 'Tire & wheel deep clean' },
+    'full-detail': { icon: 'star-outline', color: '#059669', description: 'Complete interior & exterior detail' },
 };
 
 function formatDate(dateStr: string) {
@@ -62,14 +62,14 @@ export default function BookingListScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const tabAnim = useRef(new Animated.Value(0)).current;
 
-    const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+    const STATUS_CONFIG = React.useMemo(() => ({
         pending: { label: 'Finding Washer', color: colors.warning || '#f59e0b', bg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fffbeb', icon: 'time-outline' },
         confirmed: { label: 'Confirmed', color: colors.accent || '#0ca6e8', bg: isDark ? 'rgba(12, 166, 232, 0.15)' : '#e0f4fd', icon: 'checkmark-circle-outline' },
         in_progress: { label: 'In Progress', color: '#8b5cf6', bg: isDark ? 'rgba(139, 92, 246, 0.15)' : '#f5f3ff', icon: 'water-outline' },
         completed: { label: 'Completed', color: colors.success || '#10b981', bg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#f0fdf4', icon: 'trophy-outline' },
         cancelled: { label: 'Cancelled', color: colors.textSecondary || '#6b7280', bg: isDark ? 'rgba(107, 114, 128, 0.15)' : '#f9fafb', icon: 'close-circle-outline' },
         rejected: { label: 'Rejected', color: colors.error || '#ef4444', bg: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2', icon: 'ban-outline' },
-    };
+    }), [colors, isDark]);
 
     const load = useCallback(async (silent = false) => {
         try {
@@ -177,7 +177,7 @@ export default function BookingListScreen() {
                 </View>
             ) : (
                 <ScrollView
-                    contentContainerStyle={s.scroll}
+                    contentContainerStyle={[s.scroll, { paddingBottom: 110 }]}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.accent]} tintColor={colors.accent} />}
                     showsVerticalScrollIndicator={false}
                 >
@@ -217,7 +217,7 @@ function BookingCard({
     isHistory?: boolean;
 }) {
     const cfg = statusConfig[booking.status] || statusConfig.pending;
-    const emoji = CATEGORY_EMOJI[booking.service?.categoryId] || '🚗';
+    const serviceMeta = CATEGORY_ICONS[booking.service?.categoryId] || { icon: 'car-outline', color: colors.textPrimary, description: booking.service?.name || 'Service' };
     const isPending = booking.status === 'pending';
     const isInProgress = booking.status === 'in_progress';
 
@@ -232,7 +232,7 @@ function BookingCard({
             {/* Top */}
             <View style={s.cardTop}>
                 <View style={[s.serviceIconCircle, { backgroundColor: cfg.bg }]}>
-                    <Text style={s.serviceEmoji}>{emoji}</Text>
+                    <Ionicons name={serviceMeta.icon as any} size={24} color={serviceMeta.color} />
                     {isInProgress && <View style={[s.inProgressDot, { borderColor: colors.cardBackground }]} />}
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>

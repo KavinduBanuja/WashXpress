@@ -4,6 +4,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator, Alert,
+    BackHandler,
     SafeAreaView,
     ScrollView,
     StatusBar,
@@ -12,7 +13,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { db } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -94,6 +95,29 @@ export default function WasherHome() {
     const [bookings, setBookings] = useState<BookingDoc[]>([]);
     const [loading, setLoading] = useState(true);
     const [accepting, setAccepting] = useState<string | null>(null);
+    const [hasPendingTrainees, setHasPendingTrainees] = useState(false);
+
+    // for mentorship program 
+
+    useEffect(() => {
+    const checkTrainees = async () => {
+        try {
+            const user = auth.currentUser;
+            if (!user) return;
+            const token = await user.getIdToken(true);
+            const res = await fetch(
+                `${process.env.EXPO_PUBLIC_PROVIDER_API_URL}/certification/my-trainees`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (res.ok) {
+                const data = await res.json();
+                const trainees = data.data?.trainees || [];
+                setHasPendingTrainees(trainees.some((t: any) => !t.progress.isComplete));
+            }
+        } catch { /* non-fatal */ }
+    };
+    checkTrainees();
+}, []);
 
     // ── Runtime Verification Guard ───────────────────────────────────────────
     useEffect(() => {
@@ -102,6 +126,19 @@ export default function WasherHome() {
             router.replace('/washer-pending');
         }
     }, [washerProfile, profileLoading]);
+
+    // ── Prevent Android back button from navigating away from home ───────────
+    useEffect(() => {
+        const backAction = () => {
+            Alert.alert('Exit App', 'Are you sure you want to exit?', [
+                { text: 'Cancel', onPress: () => null, style: 'cancel' },
+                { text: 'Exit', onPress: () => BackHandler.exitApp() },
+            ]);
+            return true;
+        };
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+        return () => backHandler.remove();
+    }, []);
 
     // ── Live Firestore listener on pending bookings ───────────────────────────
     useEffect(() => {
@@ -206,7 +243,7 @@ export default function WasherHome() {
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
             <ScrollView
                 style={[styles.scroll, { backgroundColor: colors.background }]}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* ── Header ── */}
@@ -262,6 +299,25 @@ export default function WasherHome() {
                     ))}
                 </View>
 
+                {/* ── Mentorship Banner ── */}
+                <TouchableOpacity
+                    style={styles.mentorshipBtn}
+                    onPress={() => router.push('/washer-mentorship' as any)}
+                    activeOpacity={0.85}
+                >
+                    <View style={styles.mentorshipLeft}>
+                        <Text style={{ fontSize: 24 }}>🎓</Text>
+                        <View>
+                            <Text style={styles.mentorshipTitle}>Mentorship Program</Text>
+                            <Text style={styles.mentorshipSub}>Train and evaluate new washers</Text>
+                        </View>
+                    </View>
+                    <View style={styles.mentorshipRight}>
+                        {hasPendingTrainees && <View style={styles.mentorRedDot} />}
+                        <Ionicons name="chevron-forward" size={18} color="#64748b" />
+                    </View>
+                </TouchableOpacity>
+
                 {/* ── Available Jobs ── */}
                 <View style={[styles.section, { backgroundColor: colors.background }]}>
                     <View style={styles.sectionHeader}>
@@ -314,40 +370,6 @@ export default function WasherHome() {
                 </View>
             </ScrollView>
 
-            {/* ── Bottom Navigation ── */}
-            <View style={[styles.bottomNav, { backgroundColor: colors.cardBackground, borderTopColor: colors.border }]}>
-                {[
-                    { key: 'home', icon: 'home-outline', label: 'Home' },
-                    { key: 'jobs', icon: 'briefcase-outline', label: 'My Jobs' },
-                    { key: 'earnings', icon: 'cash-outline', label: 'Earnings' },
-                    { key: 'shop', icon: 'cart-outline', label: 'Shop' },
-                    { key: 'profile', icon: 'person-outline', label: 'Profile' },
-                ].map((tab) => (
-                    <TouchableOpacity
-                        key={tab.key}
-                        style={styles.navItem}
-                        onPress={() => {
-                            if (tab.key === 'shop') router.push('/marketplace' as any);
-                            else if (tab.key === 'profile') router.push('/profile' as any);
-                            else if (tab.key === 'jobs') router.push('/myjobs' as any);
-                            else setActiveTab(tab.key);
-                        }}
-                    >
-                        <Ionicons
-                            name={tab.icon as any}
-                            size={22}
-                            color={activeTab === tab.key ? colors.accent : colors.textSecondary}
-                        />
-                        <Text style={[
-                            styles.navLabel,
-                            { color: colors.textSecondary },
-                            activeTab === tab.key && [styles.navLabelActive, { color: colors.accent }]
-                        ]}>
-                            {tab.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
         </SafeAreaView>
     );
 }
@@ -498,7 +520,14 @@ const styles = StyleSheet.create({
     statValue: { fontSize: 20, fontWeight: '700', marginTop: 6 },
     statLabel: { fontSize: 11, marginTop: 2 },
 
-    // Section
+    mentorshipBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e2d4a', borderRadius: 16, padding: 16, marginHorizontal: 16, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(37,99,235,0.25)' },
+    mentorshipLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    mentorshipTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
+    mentorshipSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+    mentorshipRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    mentorRedDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#ef4444' },
+
+    // Section 
     section: { paddingHorizontal: 16, marginTop: 16 },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
     sectionTitle: { fontSize: 18, fontWeight: '700' },

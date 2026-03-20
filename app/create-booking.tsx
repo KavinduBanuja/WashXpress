@@ -110,24 +110,66 @@ export default function CreateBookingScreen() {
         await checkSub(v.id);
     };
 
-    const handlePay = useCallback(() => {
-        console.log('create-booking: handlePay called, paymentPath=', paymentPath);
-        router.push('/payment-screen' as any);
-    }, [paymentPath]);
-
-    const handleBook = async () => {
-        if (!service || !selectedVehicle || !selectedAddress || !selectedTime || !paymentPath) {
+    // One-time: create booking then navigate to PaymentScreen (card UI + PayHere)
+    const handlePay = useCallback(async () => {
+        if (!service || !selectedVehicle || !selectedAddress || !selectedTime) {
             Alert.alert('Incomplete', 'Please complete all required fields.'); return;
         }
-        paymentPath === 'subscription' ? bookWithSub() : bookWithPayment();
-    };
+        setSubmitting(true);
+        try {
+        const payload = {
+            serviceId: service.id,
+            vehicleId: selectedVehicle.id,
+            addressId: selectedAddress.id,
+            scheduledDate: toDateStr(selectedDate),
+            scheduledTime: selectedTime,
+            notes: notes.trim() || undefined,
+            paymentPath: 'one_time',
+        };
+        console.log('📦 Booking payload:', JSON.stringify(payload, null, 2));  // ← add this
 
+        const res = await apiFetch('/bookings', {
+            method: 'POST',
+            body: JSON.stringify(payload),  // ← use payload directly
+        }, 'customer');
+
+            if (res.success) {
+                router.push({
+                    pathname: '/payment-screen',
+                    params: {
+                        bookingId: res.data.booking.id,
+                        amount: String(priceBreakdown?.totalPrice || service.price),
+                        serviceName: service.name,
+                        scheduledDate: toDateStr(selectedDate),
+                        scheduledTime: selectedTime,
+                    },
+                } as any);
+            } else {
+                Alert.alert('Error', res.message || 'Failed to create booking.');
+            }
+        } catch (e: any) {
+            Alert.alert('Error', e.message);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [service, selectedVehicle, selectedAddress, selectedDate, selectedTime, notes, priceBreakdown]);
+
+    // Subscription: create booking and go straight to confirmation
     const bookWithSub = async () => {
         setSubmitting(true);
         try {
             const res = await apiFetch('/bookings', {
                 method: 'POST',
-                body: JSON.stringify({ serviceId: service!.id, vehicleId: selectedVehicle!.id, addressId: selectedAddress!.id, scheduledDate: toDateStr(selectedDate), scheduledTime: selectedTime, notes: notes.trim() || undefined, paymentPath: 'subscription', subscriptionId: subscription!.id }),
+                body: JSON.stringify({
+                    serviceId: service!.id,
+                    vehicleId: selectedVehicle!.id,
+                    addressId: selectedAddress!.id,
+                    scheduledDate: toDateStr(selectedDate),
+                    scheduledTime: selectedTime,
+                    notes: notes.trim() || undefined,
+                    paymentPath: 'subscription',
+                    subscriptionId: subscription!.id,
+                }),
             }, 'customer');
             if (res.success) router.replace({ pathname: '/booking-confirmation', params: { bookingId: res.data.booking.id, path: 'subscription' } });
             else Alert.alert('Error', res.message || 'Failed to create booking.');
@@ -135,31 +177,16 @@ export default function CreateBookingScreen() {
         finally { setSubmitting(false); }
     };
 
-    const bookWithPayment = async () => {
-        if (!priceBreakdown) return;
-        setSubmitting(true);
-        try {
-            const bookingRes = await apiFetch('/bookings', {
-                method: 'POST',
-                body: JSON.stringify({ serviceId: service!.id, vehicleId: selectedVehicle!.id, addressId: selectedAddress!.id, scheduledDate: toDateStr(selectedDate), scheduledTime: selectedTime, notes: notes.trim() || undefined, paymentPath: 'one_time' }),
-            }, 'customer');
-            if (!bookingRes.success) { Alert.alert('Error', bookingRes.message); setSubmitting(false); return; }
-            const bookingId = bookingRes.data.booking.id;
-
-            const hashRes = await apiFetch('/payments/hash', {
-                method: 'POST',
-                body: JSON.stringify({ bookingId, amount: priceBreakdown.totalPrice, currency: service!.currency || 'LKR' }),
-            }, 'customer');
-            if (!hashRes.success) { Alert.alert('Error', 'Failed to initiate payment.'); setSubmitting(false); return; }
-
-            const p = hashRes.data;
-            PayHere.startPayment(
-                { sandbox: true, merchant_id: p.merchantId, notify_url: p.notifyUrl, order_id: bookingId, items: service!.name, amount: String(priceBreakdown.totalPrice), currency: service!.currency || 'LKR', first_name: p.firstName || '', last_name: p.lastName || '', email: p.email || '', phone: p.phone || '', address: selectedAddress!.addressLine1, city: selectedAddress!.city, country: 'Sri Lanka', custom_1: bookingId, custom_2: '', hash: p.hash },
-                () => { setSubmitting(false); router.replace({ pathname: '/booking-confirmation', params: { bookingId, path: 'one_time' } }); },
-                (err: string) => { setSubmitting(false); Alert.alert('Payment Failed', err); },
-                () => { setSubmitting(false); Alert.alert('Cancelled', 'Payment was cancelled. Your booking is held for 10 minutes.'); },
-            );
-        } catch (e: any) { Alert.alert('Error', e.message); setSubmitting(false); }
+    const handleBook = async () => {
+        if (!service || !selectedVehicle || !selectedAddress || !selectedTime || !paymentPath) {
+            Alert.alert('Incomplete', 'Please complete all required fields.'); return;
+        }
+        if (paymentPath === 'subscription') {
+            bookWithSub();
+        } else {
+            
+            handlePay();
+        }
     };
 
     const canBook = !!selectedVehicle && !!selectedAddress && !!selectedTime && !!paymentPath;
@@ -222,7 +249,11 @@ export default function CreateBookingScreen() {
 
                 {/* Step 2: Payment */}
                 <Step n={2} label="How to Pay?" colors={colors} />
-                <TouchableOpacity style={[s.payCard, { backgroundColor: colors.cardBackground, borderColor: colors.divider }, paymentPath === 'subscription' && { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(12, 166, 232, 0.05)' : '#f0faff' }, !subscription && { backgroundColor: isDark ? colors.background : '#fafafa' }]} onPress={() => subscription && setPaymentPath('subscription')} activeOpacity={subscription ? 0.7 : 1}>
+                <TouchableOpacity
+                    style={[s.payCard, { backgroundColor: colors.cardBackground, borderColor: colors.divider }, paymentPath === 'subscription' && { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(12, 166, 232, 0.05)' : '#f0faff' }, !subscription && { backgroundColor: isDark ? colors.background : '#fafafa' }]}
+                    onPress={() => subscription && setPaymentPath('subscription')}
+                    activeOpacity={subscription ? 0.7 : 1}
+                >
                     <View style={s.payCardRow}>
                         <View style={[s.radio, { borderColor: colors.divider }, paymentPath === 'subscription' && { borderColor: colors.accent }]}>{paymentPath === 'subscription' && <View style={[s.radioDot, { backgroundColor: colors.accent }]} />}</View>
                         <View style={[s.payIconCircle, { backgroundColor: isDark ? 'rgba(22, 163, 74, 0.1)' : '#f0fdf4' }]}><Ionicons name="refresh-circle" size={22} color={subscription ? colors.success : colors.textSecondary} /></View>
@@ -231,7 +262,7 @@ export default function CreateBookingScreen() {
                                 <Text style={[s.payTitle, { color: colors.textPrimary }, !subscription && { color: colors.textSecondary }]}>Subscription Wash</Text>
                                 {subscription && <View style={[s.freeBadge, { backgroundColor: isDark ? 'rgba(22, 163, 74, 0.2)' : '#dcfce7' }]}><Text style={[s.freeBadgeText, { color: colors.success }]}>FREE</Text></View>}
                             </View>
-                            <Text style={[s.paySub, { color: colors.textSecondary }, !subscription && { color: colors.textSecondary, opacity: 0.5 }]}>
+                            <Text style={[s.paySub, { color: colors.textSecondary }, !subscription && { opacity: 0.5 }]}>
                                 {subscription ? `${subscription.planName} · ${subscription.remainingWashes} wash${subscription.remainingWashes !== 1 ? 'es' : ''} left` : 'No active subscription for this vehicle'}
                             </Text>
                         </View>
@@ -244,7 +275,10 @@ export default function CreateBookingScreen() {
                     )}
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[s.payCard, { backgroundColor: colors.cardBackground, borderColor: colors.divider }, paymentPath === 'one_time' && { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(12, 166, 232, 0.05)' : '#f0faff' }]} onPress={() => setPaymentPath('one_time')}>
+                <TouchableOpacity
+                    style={[s.payCard, { backgroundColor: colors.cardBackground, borderColor: colors.divider }, paymentPath === 'one_time' && { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(12, 166, 232, 0.05)' : '#f0faff' }]}
+                    onPress={() => setPaymentPath('one_time')}
+                >
                     <View style={s.payCardRow}>
                         <View style={[s.radio, { borderColor: colors.divider }, paymentPath === 'one_time' && { borderColor: colors.accent }]}>{paymentPath === 'one_time' && <View style={[s.radioDot, { backgroundColor: colors.accent }]} />}</View>
                         <View style={[s.payIconCircle, { backgroundColor: isDark ? 'rgba(37, 99, 235, 0.1)' : '#eff6ff' }]}><Ionicons name="card" size={22} color={colors.accent} /></View>
@@ -333,7 +367,11 @@ export default function CreateBookingScreen() {
                 )}
 
                 {/* CTA */}
-                <TouchableOpacity style={[s.bookBtn, { backgroundColor: colors.accent }, (paymentPath === 'subscription' && (!canBook || submitting) || submitting) && [s.bookBtnDisabled, { backgroundColor: colors.divider }]]} onPress={paymentPath === 'one_time' ? handlePay : handleBook} disabled={paymentPath === 'subscription' ? (!canBook || submitting) : submitting}>
+                <TouchableOpacity
+                    style={[s.bookBtn, { backgroundColor: colors.accent }, (!canBook || submitting) && [s.bookBtnDisabled, { backgroundColor: colors.divider }]]}
+                    onPress={handleBook}
+                    disabled={!canBook || submitting}
+                >
                     {submitting ? <ActivityIndicator color="#fff" /> : (
                         <>
                             <Ionicons name={paymentPath === 'subscription' ? 'checkmark-circle' : 'card'} size={20} color="#fff" />
@@ -395,7 +433,7 @@ const s = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1 },
     backBtn: { width: 40, height: 40, justifyContent: 'center' },
     headerTitle: { fontSize: 18, fontWeight: '700' },
-    scroll: { padding: 20, paddingBottom: 40 },
+    scroll: { padding: 20, paddingBottom: 110 },
     serviceCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1 },
     serviceIconCircle: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
     serviceName: { fontSize: 16, fontWeight: '700' },
@@ -414,11 +452,8 @@ const s = StyleSheet.create({
     notice: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 10, padding: 10, marginBottom: 14, borderWidth: 1 },
     noticeTxt: { fontSize: 13, flex: 1 },
     payCard: { borderRadius: 16, borderWidth: 1.5, padding: 16, marginBottom: 10 },
-    payCardActive: { },
-    payCardDisabled: { },
     payCardRow: { flexDirection: 'row', alignItems: 'center' },
     radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
-    radioActive: { },
     radioDot: { width: 10, height: 10, borderRadius: 5 },
     payIconCircle: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
     payTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
@@ -431,13 +466,11 @@ const s = StyleSheet.create({
     noSubLink: { fontSize: 13, fontWeight: '700' },
     dateRow: { paddingBottom: 10, gap: 8, paddingLeft: 2, marginBottom: 6 },
     dateChip: { width: 64, height: 72, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center', gap: 4 },
-    dateChipSel: { },
     dateDow: { fontSize: 11, fontWeight: '600' },
     dateNum: { fontSize: 20, fontWeight: '800' },
     dateSelTxt: { color: '#fff' },
     timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
     timeChip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
-    timeChipSel: { },
     timeChipTxt: { fontSize: 14, fontWeight: '600' },
     timeChipSelTxt: { color: '#fff' },
     notesBox: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 8 },
@@ -452,13 +485,12 @@ const s = StyleSheet.create({
     priceTotalVal: { fontSize: 20, fontWeight: '800' },
     subNote: { fontSize: 12, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
     bookBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 16, paddingVertical: 18, marginTop: 16 },
-    bookBtnDisabled: { },
+    bookBtnDisabled: {},
     bookBtnTxt: { fontSize: 16, fontWeight: '800', color: '#fff' },
     modalWrap: { flex: 1 },
     modalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 20, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1 },
     modalTitle: { fontSize: 18, fontWeight: '700' },
     modalItem: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 10 },
-    modalItemSel: { },
     modalItemIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     modalItemPrimary: { fontSize: 15, fontWeight: '600' },
     modalItemSec: { fontSize: 13, marginTop: 2 },

@@ -8,6 +8,7 @@ import {
     ActivityIndicator, Alert, Linking, Platform,
     ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
+import DamageReportUploader from './damageReportUploader';
 
 interface AcceptedBooking {
     id: string;
@@ -35,6 +36,8 @@ interface AcceptedBooking {
         location?: { latitude: number; longitude: number };
     };
     customer?: { displayName: string; phone?: string };
+    damageReportPhotos?: string[];
+    damageReportUploadedAt?: string;
     createdAt: any;
 }
 
@@ -320,14 +323,14 @@ export default function WasherInProgressScreen() {
                 </View>
 
                 {/* ── Action Buttons ── */}
-                {booking.arrivedAt && (
-                    <TouchableOpacity
-                        style={[s.actionBtn, s.damageBtn, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb', borderColor: colors.warning || '#f59e0b', borderWidth: 1 }]}
-                        onPress={() => router.push(`/pre-existing-damage-section?id=${bookingId}` as Href)}
-                    >
-                        <Ionicons name="camera" size={22} color={colors.warning || '#f59e0b'} />
-                        <Text style={[s.damageBtnTxt, { color: colors.warning || '#f59e0b' }]}>Vehicle Damage Photos (Safety)</Text>
-                    </TouchableOpacity>
+                {booking && (
+                    <DamageReportUploader
+                        bookingId={bookingId}
+                        existingPhotos={booking.damageReportPhotos || []}
+                        onSaved={loadBooking}
+                        colors={colors}
+                        isDark={isDark}
+                    />
                 )}
 
                 {!booking.arrivedAt && !booking.startedAt && (
@@ -397,7 +400,7 @@ const s = StyleSheet.create({
     topService: { fontSize: 16, fontWeight: '700' },
     topMeta: { fontSize: 13, marginTop: 4 },
     topAddress: { fontSize: 13, marginTop: 4, maxWidth: '100%' },
-    scroll: { padding: 20, paddingBottom: 40 },
+    scroll: { padding: 20, paddingBottom: 110 },
 
     earningsBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 18, padding: 20, marginBottom: 16 },
     earningsLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6 },
@@ -453,6 +456,4 @@ const s = StyleSheet.create({
     startBtn: { },
     completeBtn: { },
     actionBtnTxt: { fontSize: 16, fontWeight: '800' },
-    damageBtn: { marginTop: 16, marginBottom: 8 },
-    damageBtnTxt: { fontSize: 15, fontWeight: '700' },
 });

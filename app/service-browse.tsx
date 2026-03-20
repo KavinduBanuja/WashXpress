@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
@@ -14,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { Header } from '../components/Header';
+import { useTheme } from '../context/ThemeContext';
 
 const BRAND = '#0ca6e8';
 const BRAND_DARK = '#0d1629';
@@ -48,13 +50,13 @@ interface Service {
 }
 
 export default function ServiceBrowseScreen() {
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
   const categoryParam = params.category as string | undefined;
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryParam || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -66,8 +68,7 @@ export default function ServiceBrowseScreen() {
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'duration'>('price_asc');
 
   useEffect(() => { loadData(); }, []);
-  useEffect(() => { if (categoryParam) setSelectedCategory(categoryParam); }, [categoryParam]);
-  useEffect(() => { applyFilters(); }, [services, selectedCategory, searchQuery, minPrice, maxPrice, sortBy]);
+  useEffect(() => { if (categoryParam) setSelectedCategory(categoryParam || null); }, [categoryParam]);
 
   const loadData = async () => {
     try {
@@ -80,6 +81,7 @@ export default function ServiceBrowseScreen() {
     }
   };
 
+  // Categories & Services data loading
   const loadCategories = async () => {
     try {
       const data = await apiFetch('/services/categories', { requiresAuth: false }, 'customer');
@@ -98,7 +100,8 @@ export default function ServiceBrowseScreen() {
     }
   };
 
-  const applyFilters = () => {
+  // 🔥 Optimized Filtering with useMemo
+  const filteredServices = React.useMemo(() => {
     let filtered = [...services];
 
     if (selectedCategory) filtered = filtered.filter(s => s.categoryId === selectedCategory);
@@ -117,8 +120,8 @@ export default function ServiceBrowseScreen() {
       return a.duration - b.duration;
     });
 
-    setFilteredServices(filtered);
-  };
+    return filtered;
+  }, [services, selectedCategory, searchQuery, minPrice, maxPrice, sortBy]);
 
   const clearFilters = () => {
     setSelectedCategory(null);
@@ -128,34 +131,63 @@ export default function ServiceBrowseScreen() {
     setSortBy('price_asc');
   };
 
+  // ── Render Helpers ─────────────────────────────────────
+  const renderServiceItem = ({ item: service }: { item: Service }) => {
+    const meta = getServiceMeta(service.categoryId);
+    return (
+      <TouchableOpacity 
+        style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
+        onPress={() => router.push(`/service-details?id=${service.id}`)}
+      >
+        <View style={[styles.cardIcon, { backgroundColor: meta.color + '18' }]}>
+          <Ionicons name={meta.icon} size={28} color={meta.color} />
+        </View>
+
+        <View style={styles.cardInfo}>
+          <Text style={[styles.cardName, { color: colors.textPrimary }]}>{service.name}</Text>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+            {service.description || meta.description}
+          </Text>
+          <View style={styles.cardMeta}>
+            <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+            <Text style={[styles.cardMetaText, { color: colors.textSecondary }]}>~{service.duration} min</Text>
+          </View>
+        </View>
+
+        <View style={styles.cardRight}>
+          <Text style={[styles.cardPrice, { color: colors.textPrimary }]}>LKR {service.price.toLocaleString()}</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} style={{ marginTop: 4 }} />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={BRAND} />
-        <Text style={styles.loadingText}>Loading services...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent || BRAND} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading services...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Header
         title="Browse Services"
         rightElement={
           <TouchableOpacity onPress={() => setShowFilters(true)} style={styles.headerBtn}>
-            <Ionicons name="options-outline" size={24} color="#2563eb" />
+            <Ionicons name="options-outline" size={24} color={colors.accent} />
           </TouchableOpacity>
         }
       />
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#94a3b8" style={{ marginRight: 10 }} />
+      <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+        <Ionicons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 10 }} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.textPrimary }]}
           placeholder="Search services..."
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -166,26 +198,29 @@ export default function ServiceBrowseScreen() {
         )}
       </View>
 
-      {/* Category chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        style={{ maxHeight: 52 }} contentContainerStyle={styles.categoriesContent}>
-        <TouchableOpacity
-          style={[styles.chip, !selectedCategory && styles.chipActive]}
-          onPress={() => setSelectedCategory(null)}>
-          <Text style={[styles.chipText, !selectedCategory && styles.chipTextActive]}>All</Text>
-        </TouchableOpacity>
-        {categories.map(cat => (
-          <TouchableOpacity key={cat.id}
-            style={[styles.chip, selectedCategory === cat.id && styles.chipActive]}
-            onPress={() => setSelectedCategory(cat.id)}>
-            <Text style={[styles.chipText, selectedCategory === cat.id && styles.chipTextActive]}>
-              {cat.name}
-            </Text>
+      <View style={{ height: 52 }}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          <TouchableOpacity
+            style={[styles.chip, !selectedCategory && styles.chipActive]}
+            onPress={() => setSelectedCategory(null)}>
+            <Text style={[styles.chipText, !selectedCategory && styles.chipTextActive]}>All</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {categories.map(cat => (
+            <TouchableOpacity key={cat.id}
+              style={[styles.chip, { backgroundColor: colors.cardBackground, borderColor: colors.border }, selectedCategory === cat.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+              onPress={() => setSelectedCategory(cat.id)}>
+              <Text style={[styles.chipText, { color: colors.textSecondary }, selectedCategory === cat.id && { color: '#fff', fontWeight: '600' }]}>
+                {cat.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
-      {/* Results count */}
       <View style={styles.resultsRow}>
         <Text style={styles.resultsCount}>{filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}</Text>
         {(minPrice || maxPrice || selectedCategory) && (
@@ -195,70 +230,45 @@ export default function ServiceBrowseScreen() {
         )}
       </View>
 
-      {/* Services */}
-      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 30 }}>
-        {filteredServices.length === 0 ? (
+      {/* 🔥 Optimized Scroll List using FlatList */}
+      <FlatList
+        data={filteredServices}
+        keyExtractor={item => item.id}
+        renderItem={renderServiceItem}
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={56} color="#cbd5e1" />
             <Text style={styles.emptyTitle}>No services found</Text>
             <Text style={styles.emptySub}>Try adjusting your filters</Text>
           </View>
-        ) : (
-          filteredServices.map(service => {
-            const meta = getServiceMeta(service.categoryId);
-            return (
-              <TouchableOpacity key={service.id} style={styles.card}
-                onPress={() => router.push(`/service-details?id=${service.id}`)}>
-                {/* Icon */}
-                <View style={[styles.cardIcon, { backgroundColor: meta.color + '18' }]}>
-                  <Ionicons name={meta.icon} size={28} color={meta.color} />
-                </View>
-
-                {/* Info */}
-                <View style={styles.cardInfo}>
-                  <Text style={styles.cardName}>{service.name}</Text>
-                  <Text style={styles.cardDesc} numberOfLines={1}>
-                    {service.description || meta.description}
-                  </Text>
-                  <View style={styles.cardMeta}>
-                    <Ionicons name="time-outline" size={13} color="#94a3b8" />
-                    <Text style={styles.cardMetaText}>~{service.duration} min</Text>
-                  </View>
-                </View>
-
-                {/* Price */}
-                <View style={styles.cardRight}>
-                  <Text style={styles.cardPrice}>LKR {service.price.toLocaleString()}</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#cbd5e1" style={{ marginTop: 4 }} />
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </ScrollView>
+        }
+      />
 
       {/* Filter Modal */}
       <Modal visible={showFilters} animationType="slide" transparent onRequestClose={() => setShowFilters(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filters & Sort</Text>
+            <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Filters & Sort</Text>
               <TouchableOpacity onPress={() => setShowFilters(false)}>
-                <Ionicons name="close" size={24} color={BRAND_DARK} />
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={{ padding: 20 }}>
-              <Text style={styles.filterLabel}>Price Range (LKR)</Text>
+              <Text style={[styles.filterLabel, { color: colors.textPrimary }]}>Price Range (LKR)</Text>
               <View style={styles.priceRow}>
-                <TextInput style={styles.priceInput} placeholder="Min" keyboardType="numeric"
+                <TextInput style={[styles.priceInput, { borderColor: colors.border, color: colors.textPrimary }]} placeholder="Min" placeholderTextColor={colors.textSecondary} keyboardType="numeric"
                   value={minPrice} onChangeText={setMinPrice} />
-                <Text style={{ marginHorizontal: 12, color: '#94a3b8', fontSize: 16 }}>—</Text>
-                <TextInput style={styles.priceInput} placeholder="Max" keyboardType="numeric"
+                <Text style={{ marginHorizontal: 12, color: colors.textSecondary, fontSize: 16 }}>—</Text>
+                <TextInput style={[styles.priceInput, { borderColor: colors.border, color: colors.textPrimary }]} placeholder="Max" placeholderTextColor={colors.textSecondary} keyboardType="numeric"
                   value={maxPrice} onChangeText={setMaxPrice} />
               </View>
 
-              <Text style={styles.filterLabel}>Sort By</Text>
+              <Text style={[styles.filterLabel, { color: colors.textPrimary }]}>Sort By</Text>
               <View style={styles.sortRow}>
                 {([
                   { key: 'price_asc', label: 'Price ↑' },
@@ -266,9 +276,9 @@ export default function ServiceBrowseScreen() {
                   { key: 'duration', label: 'Duration' },
                 ] as const).map(s => (
                   <TouchableOpacity key={s.key}
-                    style={[styles.sortBtn, sortBy === s.key && styles.sortBtnActive]}
+                    style={[styles.sortBtn, { borderColor: colors.border, backgroundColor: colors.background }, sortBy === s.key && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                     onPress={() => setSortBy(s.key)}>
-                    <Text style={[styles.sortBtnText, sortBy === s.key && styles.sortBtnTextActive]}>
+                    <Text style={[styles.sortBtnText, { color: colors.textSecondary }, sortBy === s.key && { color: '#fff', fontWeight: '700' }]}>
                       {s.label}
                     </Text>
                   </TouchableOpacity>
@@ -276,11 +286,11 @@ export default function ServiceBrowseScreen() {
               </View>
             </ScrollView>
 
-            <View style={styles.modalFooter}>
+            <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
               <TouchableOpacity style={styles.clearBtn} onPress={() => { clearFilters(); setShowFilters(false); }}>
                 <Text style={styles.clearBtnText}>Clear All</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.applyBtn} onPress={() => setShowFilters(false)}>
+              <TouchableOpacity style={[styles.applyBtn, { backgroundColor: colors.accent }]} onPress={() => setShowFilters(false)}>
                 <Text style={styles.applyBtnText}>Apply</Text>
               </TouchableOpacity>
             </View>

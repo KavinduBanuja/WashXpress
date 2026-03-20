@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  BackHandler,
   Dimensions,
   Image,
   RefreshControl,
@@ -98,6 +99,19 @@ export default function CustomerHomeScreen() {
   }, []);
 
   useEffect(() => { loadData(); }, []);
+
+  // Prevent back button from navigating away from home
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert('Exit App', 'Are you sure you want to exit?', [
+        { text: 'Cancel', onPress: () => null, style: 'cancel' },
+        { text: 'Exit', onPress: () => BackHandler.exitApp() },
+      ]);
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, []);
 
   const loadData = async () => {
     try {
@@ -204,7 +218,7 @@ export default function CustomerHomeScreen() {
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         {/* ── Header ── */}
@@ -439,25 +453,6 @@ export default function CustomerHomeScreen() {
         </View>
       </ScrollView>
 
-      {/* ── Quick Actions Bottom Bar ── */}
-      <View style={[styles.quickActions, { backgroundColor: colors.cardBackground, borderTopColor: colors.border }]}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/service-browse' as Href)}>
-          <Ionicons name="search" size={24} color={colors.accent} />
-          <Text style={[styles.actionText, { color: colors.textSecondary }]}>Browse</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/booking-list' as Href)}>
-          <Ionicons name="calendar" size={24} color={colors.accent} />
-          <Text style={[styles.actionText, { color: colors.textSecondary }]}>Bookings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/subscriptions' as Href)}>
-          <Ionicons name="shield-checkmark" size={24} color={colors.accent} />
-          <Text style={[styles.actionText, { color: colors.textSecondary }]}>Plans</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/profile' as Href)}>
-          <Ionicons name="person" size={24} color={colors.accent} />
-          <Text style={[styles.actionText, { color: colors.textSecondary }]}>Account</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }

@@ -1,4 +1,6 @@
 // app/complaint-new.tsx
+import { apiFetch } from '@/services/apiClient';
+import { uploadImages, StoragePaths } from '@/utils/storage';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -138,21 +140,33 @@ export default function ComplaintNewScreen() {
       }
 
       const token = await getFreshToken();
-      const formData = new FormData();
-      formData.append('bookingId', bookingId);
-      formData.append('reason', selectedReason);
-      formData.append('description', description.trim());
-      formData.append('requestRefund', String(requestRefund));
-      if (requestRefund && refundAmount) formData.append('refundAmount', refundAmount);
-      evidencePhotos.forEach((uri, idx) => {
-        formData.append('evidence', { uri, type: 'image/jpeg', name: `evidence_${idx}.jpg` } as any);
-      });
+
+      // 1. Upload images to Firebase Storage first if any
+      let uploadedUrls: string[] = [];
+      if (evidencePhotos.length > 0) {
+        uploadedUrls = await uploadImages(
+          evidencePhotos,
+          StoragePaths.complaintEvidence(`${bookingId}_${Date.now()}`)
+        );
+      }
 
       const res = await fetch(`${API_BASE_URL}/api/customer/complaints`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          bookingId,
+          reason: selectedReason,
+          description: description.trim(),
+          requestRefund,
+          refundAmount: requestRefund ? parseFloat(refundAmount) : null,
+          evidencePhotos,
+        }),
       });
+
+
       const data = await res.json();
 
       if (data.success) {
@@ -351,7 +365,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
 
-  content: { padding: 20 },
+  content: { padding: 20, paddingBottom: 110 },
 
   // Booking card
   bookingCard: {
