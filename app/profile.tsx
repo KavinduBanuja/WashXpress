@@ -95,7 +95,8 @@ export default function ProfileScreen() {
       await updateProfile(user, { photoURL: downloadURL });
 
       // Update backend
-      await apiFetch('/profile', {
+      const endpoint = userType === 'customer' ? '/profile' : '/auth/profile';
+      await apiFetch(endpoint, {
         method: 'PATCH',
         body: JSON.stringify({ photoURL: downloadURL }),
       }, userType === 'customer' ? 'customer' : 'provider');
