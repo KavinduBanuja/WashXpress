@@ -1,13 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-    Alert, Animated, ScrollView, StyleSheet, Text,
-    TextInput, TouchableOpacity, View, ActivityIndicator,
-    KeyboardAvoidingView, Platform,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { apiFetch } from '../services/apiClient';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert, Animated,
+    KeyboardAvoidingView, Platform,
+    ScrollView, StyleSheet, Text,
+    TextInput, TouchableOpacity, View,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { apiFetch } from '../services/apiClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface BookingDetails {
@@ -166,7 +168,7 @@ export default function RateBookingScreen() {
         ?? booking?.assignedStaffName
         ?? 'Your Washer';
 
-    const emoji = CATEGORY_EMOJI[booking?.service?.categoryId ?? ''] || '🚗';
+    const emoji = CATEGORY_EMOJI[booking?.service?.categoryId ?? ''] || '�';
     const activeTags = rating >= 4 ? POSITIVE_TAGS : rating > 0 ? NEGATIVE_TAGS : POSITIVE_TAGS;
 
     if (loadingBooking) return (

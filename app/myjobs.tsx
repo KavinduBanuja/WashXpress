@@ -284,7 +284,7 @@ function UpcomingJobCard({ job, colors, isDark, onMap, onView }: { job: Booking;
 
             {/* Vehicle */}
             <View style={[s.vehicleRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : colors.inputBackground }]}>
-                <Text style={s.vehicleEmoji}>🚗</Text>
+                <Ionicons name="car-outline" size={16} color={colors.textSecondary} />
                 <Text style={[s.vehicleText, { color: colors.textSecondary }]}>
                     {job.vehicle?.make} {job.vehicle?.model}
                     {job.vehicle?.year ? ` (${job.vehicle.year})` : ''}

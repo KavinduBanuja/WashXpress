@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '@/services/apiClient';
-import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 import { Href, useLocalSearchParams, useRouter } from 'expo-router';
-import { useProfile } from '../hooks/useProfile';
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { useProfile } from '../hooks/useProfile';
 
 import {
     ActivityIndicator, Alert, Linking, Platform,
@@ -55,8 +55,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 };
 
 const VEHICLE_TYPE_ICONS: Record<string, string> = {
-    SUV: '🚙', Van: '🚐', Truck: '🛻',
-    Sedan: '🚗', Hatchback: '🚗', Coupe: '🚗', Convertible: '🚗', Wagon: '🚗',
+    SUV: '', Van: '', Truck: '',
+    Sedan: '', Hatchback: '', Coupe: '', Convertible: '', Wagon: '',
 };
 
 export default function WasherBookingDetailsScreen() {
@@ -193,7 +193,7 @@ export default function WasherBookingDetailsScreen() {
     );
 
     const statusCfg = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
-    const vehicleIcon = VEHICLE_TYPE_ICONS[booking.vehicle.type] || '🚗';
+    const vehicleIcon = VEHICLE_TYPE_ICONS[booking.vehicle.type];
     const hasSpecialNotes = !!booking.notes?.trim();
     const timeChanged = booking.washerPreferredTime && booking.washerPreferredTime !== booking.scheduledTime;
 
@@ -287,7 +287,7 @@ export default function WasherBookingDetailsScreen() {
                     <CardTitle icon="car-sport" title="Vehicle" colors={colors} />
 
                     <View style={s.vehicleRow}>
-                        <Text style={s.vehicleEmoji}>{vehicleIcon}</Text>
+                        <Ionicons name="car-outline" size={18} color={colors.textSecondary} />
                         <View style={{ flex: 1, marginLeft: 14 }}>
                             <Text style={[s.vehicleName, { color: colors.textPrimary }]}>{booking.vehicle.nickname || `${booking.vehicle.make} ${booking.vehicle.model}`}</Text>
                             <Text style={[s.vehicleDetails, { color: colors.textSecondary }]}>{booking.vehicle.make} {booking.vehicle.model} · {booking.vehicle.year} · {booking.vehicle.color}</Text>

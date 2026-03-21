@@ -1,13 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '@/services/apiClient';
-import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator, Alert, Linking, Platform,
     ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import DamageReportUploader from './damageReportUploader';
 
 interface AcceptedBooking {
