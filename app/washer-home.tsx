@@ -81,9 +81,9 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 const TYPE_ICONS: Record<string, string> = {
-    SUV: '🚙', Van: '🚐', Truck: '🛻',
-    Sedan: '🚗', Hatchback: '🚗', Coupe: '🚗',
-    Convertible: '🚗', Wagon: '🚗',
+    SUV: '', Van: '', Truck: '',
+    Sedan: '', Hatchback: '', Coupe: '',
+    Convertible: '', Wagon: '',
 };
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -421,7 +421,7 @@ function JobCard({
     colors: any;
 }) {
     const isAccepting = accepting === booking.id;
-    const vehicleEmoji = TYPE_ICONS[booking.vehicle?.type || ''] || '🚗';
+    const vehicleEmoji = TYPE_ICONS[booking.vehicle?.type || ''];
     const serviceEmoji = CATEGORY_EMOJI[booking.service?.categoryId || ''] || '🚿';
     const addressStr = booking.address
         ? `${booking.address.addressLine1}, ${booking.address.city}`
@@ -434,7 +434,7 @@ function JobCard({
                 <View style={styles.jobCardLeft}>
                     <Text style={[styles.jobName, { color: colors.textPrimary }]}>{booking.customerName || 'Customer'}</Text>
                     <View style={styles.vehicleRow}>
-                        <Text style={styles.vehicleEmoji}>{vehicleEmoji}</Text>
+                        <Ionicons name="car-outline" size={16} color={colors.textSecondary} />
                         <Text style={[styles.jobVehicle, { color: colors.textSecondary }]}>
                             {booking.vehicle?.make} {booking.vehicle?.model}
                             {booking.vehicle?.year ? ` · ${booking.vehicle.year}` : ''}
