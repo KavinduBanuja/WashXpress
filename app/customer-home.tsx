@@ -156,6 +156,8 @@ export default function CustomerHomeScreen() {
   }, []);
 
   
+  const [isSendingVerify, setIsSendingVerify] = useState(false);
+
   // No longer need local useEffect for email verification status
 
   const loadData = async () => {
@@ -305,17 +307,24 @@ export default function CustomerHomeScreen() {
         
         {!isEmailVerified && (
           <TouchableOpacity
-            style={[styles.verifyBanner, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : '#fffbeb' }]}
+            style={[styles.verifyBanner, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : '#fffbeb', opacity: isSendingVerify ? 0.6 : 1 }]}
+            disabled={isSendingVerify}
             onPress={async () => {
               const user = getAuth().currentUser;
-              if (user) {
+              if (user && !isSendingVerify) {
+                setIsSendingVerify(true);
                 try {
                   await sendEmailVerification(user);
                   Alert.alert('Email Sent', 'Verification email resent. Check your inbox.', [
                     { text: 'OK', onPress: () => refreshEmailVerification() }
                   ]);
                 } catch (error: any) {
-                  Alert.alert('Error', error.message || 'Failed to send verification email.');
+                  const msg = error.code === 'auth/too-many-requests'
+                    ? 'Please wait a few minutes before requesting another verification email.'
+                    : error.message || 'Failed to send verification email.';
+                  Alert.alert('Notice', msg);
+                } finally {
+                  setIsSendingVerify(false);
                 }
               }
             }}
