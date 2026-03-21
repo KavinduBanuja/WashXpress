@@ -21,9 +21,9 @@ interface Vehicle {
 }
 
 const TYPE_ICONS: Record<string, string> = {
-    SUV: '🚙', Van: '🚐', Truck: '🛻',
-    Sedan: '🚗', Hatchback: '🚗', Coupe: '🚗',
-    Convertible: '🚗', Wagon: '🚗',
+    SUV: 'SUV', Van: 'Van', Truck: 'Truck',
+    Sedan: 'Sedan', Hatchback: 'Hatchback', Coupe: 'Coupe',
+    Convertible: 'Convertible', Wagon: 'Wagon',
 };
 
 // Tinted backgrounds for vehicle types, will be adjusted in-line for dark mode
@@ -99,7 +99,7 @@ export default function VehicleListScreen() {
                 {vehicles.length === 0 ? (
                     <View style={s.emptyState}>
                         <View style={[s.emptyIconCircle, { backgroundColor: isDark ? 'rgba(12, 166, 232, 0.15)' : '#e0f4fd' }]}>
-                            <Text style={s.emptyEmoji}>🚗</Text>
+                            <Ionicons name="car-outline" size={44} color={colors.accent} />
                         </View>
                         <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>No vehicles yet</Text>
                         <Text style={[s.emptySubtitle, { color: colors.textSecondary }]}>Add your first vehicle to start booking car wash services.</Text>
@@ -118,7 +118,7 @@ export default function VehicleListScreen() {
                                 activeOpacity={0.85}
                             >
                                 <View style={[s.vehicleIconCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : (TYPE_COLORS[v.type] || '#f8fafc') }]}>
-                                    <Text style={s.vehicleEmoji}>{TYPE_ICONS[v.type] || '🚗'}</Text>
+                                    <Ionicons name="car-outline" size={28} color={colors.accent} />
                                 </View>
 
                                 <View style={s.vehicleInfo}>
