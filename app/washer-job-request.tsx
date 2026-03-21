@@ -43,7 +43,7 @@ function formatDate(d: string) {
 }
 
 const VEHICLE_TYPE_ICONS: Record<string, string> = {
-    SUV: '🚙', Van: '🚐', Truck: '🛻', Sedan: '🚗', Hatchback: '🚗', Coupe: '🚗', Convertible: '🚗', Wagon: '🚗',
+    SUV: '', Van: '', Truck: '', Sedan: '', Hatchback: '', Coupe: '', Convertible: '', Wagon: '',
 };
 
 export default function WasherJobRequestScreen() {
@@ -172,7 +172,7 @@ export default function WasherJobRequestScreen() {
         <View style={[s.center, { backgroundColor: colors.background }]}><Text style={{ color: colors.error }}>Job not found</Text></View>
     );
 
-    const vehicleIcon = VEHICLE_TYPE_ICONS[request.vehicle.type] || '🚗';
+    const vehicleIcon = VEHICLE_TYPE_ICONS[request.vehicle.type];
     const hasSpecialNotes = !!request.notes?.trim();
     const timeChanged = preferredTime && preferredTime !== request.scheduledTime;
 
@@ -228,7 +228,7 @@ export default function WasherJobRequestScreen() {
                     </View>
 
                     <View style={s.vehicleMain}>
-                        <Text style={s.vehicleEmoji}>{vehicleIcon}</Text>
+                        <Ionicons name="car-outline" size={18} color={colors.textSecondary} />
                         <View style={{ flex: 1, marginLeft: 14 }}>
                             <Text style={[s.vehicleName, { color: colors.textPrimary }]}>{request.vehicle.nickname || `${request.vehicle.make} ${request.vehicle.model}`}</Text>
                             <Text style={[s.vehicleDetails, { color: colors.textSecondary }]}>{request.vehicle.make} {request.vehicle.model} · {request.vehicle.year}</Text>
@@ -333,7 +333,7 @@ export default function WasherJobRequestScreen() {
                         <View style={[s.modalSummary, { backgroundColor: isDark ? colors.cardBackground : '#e0f4fd' }]}>
                             <Text style={[s.modalSummaryService, { color: colors.textPrimary }]}>{request.service.name}</Text>
                             <Text style={[s.modalSummaryVehicle, { color: colors.textSecondary }]}>
-                                {vehicleIcon} {request.vehicle.nickname || `${request.vehicle.make} ${request.vehicle.model}`} · {request.vehicle.licensePlate}
+                                {request.vehicle.nickname || `${request.vehicle.make} ${request.vehicle.model}`} · {request.vehicle.licensePlate}
                             </Text>
                             <Text style={[s.modalSummaryDate, { color: colors.textSecondary }]}>{formatDate(request.scheduledDate)}</Text>
                         </View>
