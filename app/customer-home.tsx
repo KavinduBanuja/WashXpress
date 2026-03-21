@@ -88,6 +88,34 @@ export default function CustomerHomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const scrollX = React.useRef(new Animated.Value(0)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    if (!loading) {
+      const hasActiveAllowances = activeSubscription && (
+        activeSubscription.remainingWashes > 0 ||
+        activeSubscription.remainingInteriorCleans > 0 ||
+        activeSubscription.remainingTireCleans > 0 ||
+        activeSubscription.remainingFullDetails > 0
+      );
+
+      if (!hasActiveAllowances) {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    }
+  }, [loading, activeSubscription]);
 
   const DATA = React.useMemo(() => {
     const REPEAT_COUNT = 100;
@@ -272,12 +300,12 @@ export default function CustomerHomeScreen() {
           </View>
         )}
 
-        {/* ── Active Subscription Allowances ── */}
+        {/* ── Active Subscription Allowances or CTA ── */}
         {activeSubscription &&
           (activeSubscription.remainingWashes > 0 ||
             activeSubscription.remainingInteriorCleans > 0 ||
             activeSubscription.remainingTireCleans > 0 ||
-            activeSubscription.remainingFullDetails > 0) && (
+            activeSubscription.remainingFullDetails > 0) ? (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Available in Plan</Text>
@@ -364,6 +392,30 @@ export default function CustomerHomeScreen() {
                 )}
               </View>
             </View>
+          ) : (
+            <Animated.View style={[styles.section, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>WashXpress Plans</Text>
+              </View>
+              <View style={[styles.ctaCard, { backgroundColor: colors.cardBackground, shadowColor: isDark ? '#000' : '#888' }]}>
+                <View style={styles.ctaCardContent}>
+                  <View style={[styles.ctaIconContainer, { backgroundColor: colors.accentLight || 'rgba(37,99,235,0.1)' }]}>
+                    <Ionicons name="star" size={28} color={colors.accent || '#2563EB'} />
+                  </View>
+                  <View style={styles.ctaTextContainer}>
+                    <Text style={[styles.ctaTitle, { color: colors.textPrimary }]}>Subscribe to WashXpress</Text>
+                    <Text style={[styles.ctaDescription, { color: colors.textSecondary }]}>Enjoy exclusive benefits, priority service, and up to 30% savings on every wash.</Text>
+                  </View>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.ctaButton, { backgroundColor: colors.accent || '#2563EB' }]}
+                  onPress={() => router.push('/subscriptions' as Href)}
+                >
+                  <Text style={styles.ctaButtonText}>View Plans</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#FFF" style={styles.ctaButtonIcon} />
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
           )}
 
         {/* ── Active Bookings ── */}
@@ -508,6 +560,16 @@ const styles = StyleSheet.create({
   allowanceCount: { fontSize: 13, color: '#64748b' },
   allowanceOrderBtn: { backgroundColor: '#e0f2fe', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginLeft: 12 },
   allowanceOrderBtnText: { fontSize: 13, fontWeight: '700', color: '#0ca6e8' },
+
+  ctaCard: { borderRadius: 16, padding: 18, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
+  ctaCardContent: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
+  ctaIconContainer: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  ctaTextContainer: { flex: 1, justifyContent: 'center' },
+  ctaTitle: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
+  ctaDescription: { fontSize: 13, lineHeight: 18 },
+  ctaButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10 },
+  ctaButtonText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+  ctaButtonIcon: { marginLeft: 6, marginTop: 1 },
 
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginHorizontal: 20, padding: 16, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#FF3B30' },
   logoutText: { fontSize: 16, color: '#FF3B30', marginLeft: 8, fontWeight: '600' },
