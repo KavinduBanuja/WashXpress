@@ -84,7 +84,7 @@ function planTagline(sub: Subscription): string {
 function AllowanceBar({
     label, icon, remaining, total, color,
 }: {
-    label: string; icon: string; remaining: number; total: number; color: string;
+    label: string; icon: keyof typeof Ionicons.glyphMap; remaining: number; total: number; color: string;
 }) {
     if (total === 0) return null;
     const pct = Math.min((remaining / total) * 100, 100);
@@ -93,7 +93,7 @@ function AllowanceBar({
         <View style={s.allowanceRow}>
             <View style={s.allowanceTop}>
                 <View style={s.allowanceLabelRow}>
-                    <Text style={s.allowanceEmoji}>{icon}</Text>
+                    <Ionicons name={icon} size={15} color={color} />
                     <Text style={s.allowanceLabel}>{label}</Text>
                 </View>
                 <Text style={[s.allowanceCount, isEmpty && { color: '#ef4444' }]}>
@@ -110,10 +110,10 @@ function AllowanceBar({
     );
 }
 
-function StatPill({ icon, label, color }: { icon: string; label: string; color: string }) {
+function StatPill({ icon, label, color }: { icon: keyof typeof Ionicons.glyphMap; label: string; color: string }) {
     return (
         <View style={[s.statPill, { backgroundColor: color + '18', borderColor: color + '40' }]}>
-            <Text style={s.statPillIcon}>{icon}</Text>
+            <Ionicons name={icon} size={14} color={color} />
             <Text style={[s.statPillLabel, { color }]}>{label}</Text>
         </View>
     );
@@ -304,16 +304,16 @@ export default function MySubscriptionScreen() {
                                         {/* ── Quick stats pills ── */}
                                         <View style={s.statPillRow}>
                                             {sub.totalWashes > 0 && (
-                                                <StatPill icon="🚿" label={`${sub.totalWashes} Washes`} color={color} />
+                                                <StatPill icon="water-outline" label={`${sub.totalWashes} Washes`} color={color} />
                                             )}
                                             {sub.totalInteriorCleans > 0 && (
-                                                <StatPill icon="🧹" label={`${sub.totalInteriorCleans} Interior`} color={color} />
+                                                <StatPill icon="sparkles-outline" label={`${sub.totalInteriorCleans} Interior`} color={color} />
                                             )}
                                             {sub.totalTireCleans > 0 && (
-                                                <StatPill icon="⚙️" label={`${sub.totalTireCleans} Tires`} color={color} />
+                                                <StatPill icon="construct-outline" label={`${sub.totalTireCleans} Tires`} color={color} />
                                             )}
                                             {sub.totalFullDetails > 0 && (
-                                                <StatPill icon="✨" label={`${sub.totalFullDetails} Detail`} color={color} />
+                                                <StatPill icon="star" label={`${sub.totalFullDetails} Detail`} color={color} />
                                             )}
                                         </View>
 
@@ -341,10 +341,10 @@ export default function MySubscriptionScreen() {
 
                                         {/* ── Service Allowances ── */}
                                         <Text style={s.sectionLabel}>Service Allowances</Text>
-                                        <AllowanceBar label="Exterior Washes" icon="🚿" remaining={sub.remainingWashes} total={sub.totalWashes} color={color} />
-                                        <AllowanceBar label="Interior Cleans" icon="🧹" remaining={sub.remainingInteriorCleans} total={sub.totalInteriorCleans} color={color} />
-                                        <AllowanceBar label="Tire Cleanings" icon="⚙️" remaining={sub.remainingTireCleans} total={sub.totalTireCleans} color={color} />
-                                        <AllowanceBar label="Full Details" icon="✨" remaining={sub.remainingFullDetails} total={sub.totalFullDetails} color={color} />
+                                        <AllowanceBar label="Exterior Washes" icon="water-outline" remaining={sub.remainingWashes} total={sub.totalWashes} color={color} />
+                                        <AllowanceBar label="Interior Cleans" icon="sparkles-outline" remaining={sub.remainingInteriorCleans} total={sub.totalInteriorCleans} color={color} />
+                                        <AllowanceBar label="Tire Cleanings" icon="construct-outline" remaining={sub.remainingTireCleans} total={sub.totalTireCleans} color={color} />
+                                        <AllowanceBar label="Full Details" icon="star" remaining={sub.remainingFullDetails} total={sub.totalFullDetails} color={color} />
 
                                         {/* ── Plan features (if available) ── */}
                                         {features.length > 0 && (
@@ -483,7 +483,6 @@ const s = StyleSheet.create({
     allowanceRow: { marginBottom: 14 },
     allowanceTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
     allowanceLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    allowanceEmoji: { fontSize: 15 },
     allowanceLabel: { fontSize: 13, color: '#374151', fontWeight: '500' },
     allowanceCount: { fontSize: 12, fontWeight: '700', color: '#374151' },
     barBg: { height: 9, backgroundColor: '#f1f5f9', borderRadius: 5, overflow: 'hidden' },

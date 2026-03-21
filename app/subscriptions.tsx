@@ -118,10 +118,10 @@ function ActiveSubCard({ sub, onCancel, colors }: { sub: Subscription; onCancel:
 }
 
 // ── Allowance Pill ────────────────────────────────────────────────────────────
-function AllowancePill({ icon, label, color, colors, isDark }: { icon: string; label: string; color: string; colors: any; isDark: boolean }) {
+function AllowancePill({ icon, label, color, colors, isDark }: { icon: keyof typeof Ionicons.glyphMap; label: string; color: string; colors: any; isDark: boolean }) {
   return (
     <View style={[s.pill, { backgroundColor: isDark ? `${color}25` : `${color}15`, borderColor: `${color}40` }]}>
-      <Text style={s.pillIcon}>{icon}</Text>
+      <Ionicons name={icon} size={14} color={color} />
       <Text style={[s.pillLabel, { color }]}>{label}</Text>
     </View>
   );
@@ -148,13 +148,13 @@ function PlanCard({ plan, onSelect, isCurrentPlan, colors, isDark }: {
       </View>
       <View style={s.planBody}>
         <View style={s.allowanceSummary}>
-          <AllowancePill icon="🚿" label={`${plan.allowances?.washes ?? 0} Washes`} color={plan.color} colors={colors} isDark={isDark} />
-          <AllowancePill icon="🧹" label={`${plan.allowances?.interiorCleans ?? 0} Interior`} color={plan.color} colors={colors} isDark={isDark} />
+          <AllowancePill icon="water-outline" label={`${plan.allowances?.washes ?? 0} Washes`} color={plan.color} colors={colors} isDark={isDark} />
+          <AllowancePill icon="sparkles-outline" label={`${plan.allowances?.interiorCleans ?? 0} Interior`} color={plan.color} colors={colors} isDark={isDark} />
           {(plan.allowances?.tireCleans ?? 0) > 0 && (
-            <AllowancePill icon="⚙️" label={`${plan.allowances?.tireCleans} Tires`} color={plan.color} colors={colors} isDark={isDark} />
+            <AllowancePill icon="construct-outline" label={`${plan.allowances?.tireCleans} Tires`} color={plan.color} colors={colors} isDark={isDark} />
           )}
           {(plan.allowances?.fullDetails ?? 0) > 0 && (
-            <AllowancePill icon="✨" label={`${plan.allowances?.fullDetails} Full Detail`} color={plan.color} colors={colors} isDark={isDark} />
+            <AllowancePill icon="star-outline" label={`${plan.allowances?.fullDetails} Full Detail`} color={plan.color} colors={colors} isDark={isDark} />
           )}
         </View>
         {plan.features.map((f, i) => (
@@ -164,8 +164,9 @@ function PlanCard({ plan, onSelect, isCurrentPlan, colors, isDark }: {
           </View>
         ))}
         {isCurrentPlan ? (
-          <View style={[s.currentPlanBadge, { borderColor: plan.color }]}>
-            <Text style={[s.currentPlanBadgeText, { color: plan.color }]}>✓ Your Current Plan</Text>
+          <View style={[s.currentPlanBadge, { borderColor: plan.color, flexDirection: 'row', gap: 6 }]}>
+            <Ionicons name="checkmark-circle" size={18} color={plan.color} />
+            <Text style={[s.currentPlanBadgeText, { color: plan.color }]}>Your Current Plan</Text>
           </View>
         ) : (
           <TouchableOpacity style={[s.selectBtn, { backgroundColor: plan.color }]} onPress={onSelect}>
@@ -413,8 +414,7 @@ const s = StyleSheet.create({
   planPricePer: { fontSize: 14, fontWeight: '400' },
   planBody: { padding: 20 },
   allowanceSummary: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
-  pillIcon: { fontSize: 13 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
   pillLabel: { fontSize: 12, fontWeight: '600' },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   featureText: { fontSize: 14, flex: 1 },

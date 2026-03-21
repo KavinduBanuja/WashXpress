@@ -149,7 +149,7 @@ export async function getProfileFromFirebase(uid: string, userType: 'customer' |
   try {
     const collectionName = userType === 'customer' ? 'customers' : 'providers';
     console.log(`🔍 [getProfileFromFirebase] Trying collection: ${collectionName} for UID: ${uid}`);
-    
+
     let docRef = doc(db, collectionName, uid);
     let docSnap = await getDoc(docRef);
 
@@ -163,7 +163,7 @@ export async function getProfileFromFirebase(uid: string, userType: 'customer' |
     if (docSnap.exists()) {
       const data = docSnap.data();
       console.log(`✅ Profile found in collection: ${docSnap.ref.parent.id}`);
-      
+
       // Safeguard: Confirm UID match
       if (data.uid && data.uid !== uid) {
         console.error(`❌ UID mismatch in doc! Doc UID: ${data.uid}, Auth UID: ${uid}`);
@@ -174,7 +174,7 @@ export async function getProfileFromFirebase(uid: string, userType: 'customer' |
         ...data,
       } as CustomerProfile;
     }
-    
+
     console.warn(`❌ No profile doc found for UID: ${uid} in any expected collection.`);
     return null;
   } catch (error) {

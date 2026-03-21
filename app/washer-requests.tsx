@@ -69,7 +69,7 @@ export default function WasherRequestsScreen() {
     // ── Runtime Verification Guard ───────────────────────────────────────────
     useEffect(() => {
         if (!profileLoading && washerProfile && washerProfile.isVerified === false) {
-            console.log('🛑 Washer not verified, redirecting to pending...');
+            console.log('Washer not verified, redirecting to pending...');
             router.replace('/washer-pending');
         }
     }, [washerProfile, profileLoading]);
@@ -117,7 +117,7 @@ export default function WasherRequestsScreen() {
 
             if (data.success) {
                 Alert.alert(
-                    'Job Accepted! 🎉',
+                    'Job Accepted!',
                     'You won the race! The customer will be notified.',
                     [
                         {

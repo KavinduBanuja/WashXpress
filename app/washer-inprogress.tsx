@@ -54,9 +54,15 @@ function formatDate(d: string) {
     });
 }
 
-const VEHICLE_TYPE_ICONS: Record<string, string> = {
-    SUV: '', Van: '', Truck: '',
-    Sedan: '', Hatchback: '', Coupe: '', Convertible: '', Wagon: '',
+const VEHICLE_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+    SUV: 'car-sport-outline',
+    Van: 'bus-outline',
+    Truck: 'car-sport-outline',
+    Sedan: 'car-outline',
+    Hatchback: 'car-outline',
+    Coupe: 'car-outline',
+    Convertible: 'car-outline',
+    Wagon: 'car-outline',
 };
 
 export default function WasherInProgressScreen() {
@@ -279,7 +285,7 @@ export default function WasherInProgressScreen() {
                         <View style={[s.specialNotesBox, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb', borderColor: colors.warning }]}>
                             <View style={s.specialNotesHeader}>
                                 <Ionicons name="warning" size={18} color={colors.warning} />
-                                <Text style={[s.specialNotesTitle, { color: colors.warning }]}>⚠️ Special Instructions</Text>
+                                <Text style={[s.specialNotesTitle, { color: colors.warning }]}>Special Instructions</Text>
                             </View>
                             <Text style={[s.specialNotesTxt, { color: colors.textPrimary }]}>{booking.notes}</Text>
                         </View>
@@ -369,10 +375,10 @@ export default function WasherInProgressScreen() {
     );
 }
 
-function CardTitle({ icon, title, colors }: { icon: string; title: string; colors: any }) {
+function CardTitle({ icon, title, colors }: { icon: keyof typeof Ionicons.glyphMap; title: string; colors: any }) {
     return (
         <View style={s.cardTitleRow}>
-            <Ionicons name={icon as any} size={18} color={colors.accent} />
+            <Ionicons name={icon} size={18} color={colors.accent} />
             <Text style={[s.cardTitle, { color: colors.textPrimary }]}>{title}</Text>
         </View>
     );

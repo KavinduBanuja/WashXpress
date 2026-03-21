@@ -119,12 +119,12 @@ export default function WasherJobRequestScreen() {
 
             if (res.success) {
                 Alert.alert(
-                    '🎉 Job Accepted!',
+                    'Job Accepted!',
                     `You got the job! ${preferredTime !== request.scheduledTime ? `You've set your arrival for ${fmt(preferredTime)} (customer requested ${fmt(request.scheduledTime)}).` : `See you at ${fmt(preferredTime)}.`}`,
                     [{ text: 'View Job', onPress: () => router.replace({ pathname: '/washer-booking-details', params: { id: requestId } }) }]
                 );
             } else {
-                Alert.alert('Job Taken 😓', res.message || 'Another washer already accepted this job. Better luck next time!');
+                Alert.alert('Job Taken', res.message || 'Another washer already accepted this job. Better luck next time!');
                 router.back();
             }
         } catch (e: any) {
@@ -194,8 +194,8 @@ export default function WasherJobRequestScreen() {
                 {/* Race mode banner */}
                 <View style={[s.raceBanner, { backgroundColor: isDark ? colors.cardBackground : '#0d1629' }]}>
                     <View style={s.raceBannerLeft}>
-                        <Text style={s.raceIcon}>🏁</Text>
-                        <View>
+                        <Ionicons name="flag" size={24} color="#fff" />
+                        <View style={{ marginLeft: 12 }}>
                             <Text style={s.raceBannerTitle}>RACE MODE ACTIVE</Text>
                             <Text style={[s.raceBannerSub, { color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.7)' }]}>First to accept wins this job!</Text>
                         </View>

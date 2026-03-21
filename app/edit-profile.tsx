@@ -33,8 +33,18 @@ export default function EditProfileScreen() {
 
     useEffect(() => {
         if (profile) {
-            setFirstName(profile.firstName || '');
-            setLastName(profile.lastName || '');
+            let f = profile.firstName || '';
+            let l = profile.lastName || '';
+
+            // Fallback: splitting displayName if original fields are empty
+            if (!f && !l && profile.displayName) {
+                const parts = profile.displayName.trim().split(' ');
+                f = parts[0];
+                l = parts.length > 1 ? parts.slice(1).join(' ') : '';
+            }
+
+            setFirstName(f);
+            setLastName(l);
             setPhoneNumber(profile.phoneNumber || '');
             setDisplayName(profile.displayName || '');
             setArea(profile.area || '');

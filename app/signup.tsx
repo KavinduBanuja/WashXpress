@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { sendEmailVerification } from 'firebase/auth';
+import { auth as firebaseAuth } from '../firebaseConfig';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -184,43 +186,36 @@ export default function SignupScreen() {
           isDefault: true,
         }),
       }, 'customer');
-
       addressSaved = true;
     } catch (error: any) {
       console.error('❌ Address save error:', error);
-      // Non-fatal — account already created, continue anyway
-    }
-
-    // Set auth AFTER all API calls to prevent premature navigation
-    if (authToken && registeredUser) {
-      await setAuth(authToken, 'customer', registeredUser);
-    }
-
-    // Send verification email
-    try {
-      await fetch(`${process.env.EXPO_PUBLIC_CUSTOMER_API_URL}/auth/send-verification-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ email }),
-      });
-    } catch (e) {
-      console.warn('Failed to send verification email (non-fatal):', e);
     } finally {
       setLoading(false);
     }
 
-    // Navigate to email verification screen
-    router.replace({
-      pathname: '/email-verification',
-      params: {
-        email,
-        userType: 'customer',
-        nextRoute: '/customer-home',
-      },
-    } as any);
+    // Set auth AFTER all API calls
+    if (authToken && registeredUser) {
+      await setAuth(authToken, 'customer', registeredUser);
+    }
+
+    // Send Firebase verification email
+    try {
+      const currentUser = firebaseAuth.currentUser;
+      if (currentUser && !currentUser.emailVerified) {
+        await sendEmailVerification(currentUser);
+        console.log('Verification email sent');
+      }
+    } catch (e) {
+      console.warn('Could not send verification email (non-fatal):', e);
+    }
+
+    Alert.alert(
+      'Welcome to WashXpress!',
+      addressSaved
+        ? 'Your account has been created. Please check your email to verify your account.'
+        : 'Account created but address could not be saved. Please check your email to verify your account.',
+      [{ text: 'Get Started', onPress: () => router.replace('/customer-home' as any) }]
+    );
   };
 
   const handleSkipAddress = () => {
@@ -236,28 +231,17 @@ export default function SignupScreen() {
               await setAuth(authToken, 'customer', registeredUser);
             }
 
-            // Still send verification email even when skipping address
+            // Send Firebase verification email
             try {
-              await fetch(`${process.env.EXPO_PUBLIC_CUSTOMER_API_URL}/auth/send-verification-email`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${authToken}`,
-                },
-                body: JSON.stringify({ email }),
-              });
+              const currentUser = firebaseAuth.currentUser;
+              if (currentUser && !currentUser.emailVerified) {
+                await sendEmailVerification(currentUser);
+              }
             } catch (e) {
-              console.warn('Failed to send verification email (non-fatal):', e);
+              console.warn('Could not send verification email (non-fatal):', e);
             }
 
-            router.replace({
-              pathname: '/email-verification',
-              params: {
-                email,
-                userType: 'customer',
-                nextRoute: '/customer-home',
-              },
-            } as any);
+            router.replace('/customer-home' as any);
           },
         },
       ]
@@ -285,14 +269,14 @@ export default function SignupScreen() {
               <TouchableOpacity
                 key={option}
                 style={[
-                  styles.modalOption, 
+                  styles.modalOption,
                   { backgroundColor: colors.cardBackground, borderBottomColor: colors.divider },
                   selectedValue === option && [styles.modalOptionSelected, { backgroundColor: colors.background }]
                 ]}
                 onPress={() => { onSelect(option); onClose(); }}
               >
                 <Text style={[
-                  styles.modalOptionText, 
+                  styles.modalOptionText,
                   { color: colors.textPrimary },
                   selectedValue === option && [styles.modalOptionTextSelected, { color: colors.accent }]
                 ]}>
@@ -539,7 +523,7 @@ export default function SignupScreen() {
                     <TouchableOpacity
                       key={lbl}
                       style={[
-                        styles.labelChip, 
+                        styles.labelChip,
                         { borderColor: colors.border, backgroundColor: colors.cardBackground },
                         addressLabel === lbl && [styles.labelChipActive, { backgroundColor: colors.accent, borderColor: colors.accent }]
                       ]}

@@ -1,6 +1,9 @@
 import { apiFetch } from '@/services/apiClient';
 import { getProfileFromFirebase } from '@/services/authService';
 import { Ionicons } from '@expo/vector-icons';
+import { getAuth } from 'firebase/auth';
+import { sendEmailVerification } from 'firebase/auth';
+
 import { Href, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
@@ -19,6 +22,7 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 const ITEM_SIZE = width * 0.72;
@@ -87,6 +91,7 @@ export default function CustomerHomeScreen() {
   const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { isEmailVerified, refreshEmailVerification } = useAuth();
   const scrollX = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
@@ -140,6 +145,9 @@ export default function CustomerHomeScreen() {
     return () => backHandler.remove();
   }, []);
 
+  
+  // No longer need local useEffect for email verification status
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -178,6 +186,9 @@ export default function CustomerHomeScreen() {
       console.error('Load data error:', error);
       Alert.alert('Error', error.message || 'Failed to load data');
     } finally {
+      // The original instruction seems to be for AuthContext, not customer-home.tsx.
+      // In customer-home.tsx, we only need to set the local loading state.
+      // The `isEmailVerified` status is managed by AuthContext and accessed via `useAuth()`.
       setLoading(false);
     }
   };
@@ -264,6 +275,29 @@ export default function CustomerHomeScreen() {
             </View>
           </TouchableOpacity>
         </View>
+        
+        {!isEmailVerified && (
+          <TouchableOpacity
+            style={[styles.verifyBanner, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : '#fffbeb' }]}
+            onPress={async () => {
+              const user = getAuth().currentUser;
+              if (user) {
+                try {
+                  await sendEmailVerification(user);
+                  Alert.alert('Email Sent', 'Verification email resent. Check your inbox.', [
+                    { text: 'OK', onPress: () => refreshEmailVerification() }
+                  ]);
+                } catch (error: any) {
+                  Alert.alert('Error', error.message || 'Failed to send verification email.');
+                }
+              }
+            }}
+          >
+            <Ionicons name="mail-outline" size={18} color="#f59e0b" />
+            <Text style={[styles.verifyBannerTxt, { color: isDark ? '#fbbf24' : '#92400e' }]}>Tap to verify your email address</Text>
+            <Ionicons name="chevron-forward" size={16} color="#f59e0b" />
+          </TouchableOpacity>
+        )}
 
         {/* ── My Vehicles ── */}
         {vehicles.length > 0 && (
@@ -513,6 +547,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' },
   loadingText: { marginTop: 12, fontSize: 16, color: '#666' },
+  verifyBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' },
+  verifyBannerTxt: { flex: 1, fontSize: 13, fontWeight: '600', color: '#f59e0b' },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: '#FFF' },
   greeting: { fontSize: 16, color: '#666' },

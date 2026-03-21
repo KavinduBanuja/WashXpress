@@ -327,7 +327,7 @@ export default function WasherEarningsScreen() {
 
                     {filteredBookings.length === 0 ? (
                         <View style={s.emptyJobs}>
-                            <Text style={{ fontSize: 32, marginBottom: 8 }}>💼</Text>
+                            <Ionicons name="briefcase-outline" size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
                             <Text style={s.emptyJobsTxt}>No jobs in this period</Text>
                         </View>
                     ) : (
@@ -375,13 +375,15 @@ export default function WasherEarningsScreen() {
                         <Text style={s.cardTitle}>Boost Your Earnings</Text>
                     </View>
                     {[
-                        { icon: '⚡', tip: 'Accept jobs quickly in race mode — first to accept wins' },
-                        { icon: '⭐', tip: 'Maintain a 4.5+ rating to get priority job matching' },
-                        { icon: '📅', tip: 'Stay available on weekends — highest demand days' },
-                        { icon: '🎓', tip: 'Become a certified mentor for extra recognition' },
+                        { icon: 'flash-outline', tip: 'Accept jobs quickly in race mode — first to accept wins', color: '#f59e0b' },
+                        { icon: 'star-outline', tip: 'Maintain a 4.5+ rating to get priority job matching', color: '#facc15' },
+                        { icon: 'calendar-outline', tip: 'Stay available on weekends — highest demand days', color: '#2563eb' },
+                        { icon: 'school-outline', tip: 'Become a certified mentor for extra recognition', color: '#7c3aed' },
                     ].map((t, i) => (
                         <View key={i} style={s.tipRow}>
-                            <Text style={{ fontSize: 18, width: 28 }}>{t.icon}</Text>
+                            <View style={{ width: 28, alignItems: 'center' }}>
+                                <Ionicons name={t.icon as any} size={18} color={t.color} />
+                            </View>
                             <Text style={s.tipTxt}>{t.tip}</Text>
                         </View>
                     ))}

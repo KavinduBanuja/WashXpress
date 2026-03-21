@@ -199,6 +199,19 @@ export default function ProfileScreen() {
     return combined || 'WashXpress User';
   };
 
+  const deriveNameParts = () => {
+    let f = profile?.firstName || '';
+    let l = profile?.lastName || '';
+    if (!f && !l && profile?.displayName) {
+      const parts = profile.displayName.trim().split(' ');
+      f = parts[0];
+      l = parts.length > 1 ? parts.slice(1).join(' ') : '';
+    }
+    return { first: f, last: l };
+  };
+
+  const nameParts = deriveNameParts();
+
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -450,7 +463,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>First Name</Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{profile?.firstName || 'Not provided'}</Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{nameParts.first || 'Not provided'}</Text>
               </View>
             </View>
             <View style={[styles.divider, { backgroundColor: colors.divider }]} />
@@ -460,7 +473,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Last Name</Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{profile?.lastName || 'Not provided'}</Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{nameParts.last || 'Not provided'}</Text>
               </View>
             </View>
           </View>

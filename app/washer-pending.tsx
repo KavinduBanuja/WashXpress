@@ -181,7 +181,7 @@ export default function WasherPendingScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={[s.headerGreeting, { color: colors.textPrimary }]}>Hi, {profile?.displayName?.split(' ')[0] || 'Washer'} 👋</Text>
+        <Text style={[s.headerGreeting, { color: colors.textPrimary }]}>Hi, {profile?.displayName?.split(' ')[0] || 'Washer'}</Text>
         <Text style={[s.headerSubtitle, { color: colors.textSecondary }]}>Your application is being processed</Text>
 
         {/* Status pill */}

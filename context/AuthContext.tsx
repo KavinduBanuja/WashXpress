@@ -8,11 +8,13 @@ interface AuthState {
   token: string | null;
   userType: 'customer' | 'provider' | null;
   user: CustomerProfile | null;
+  isEmailVerified: boolean;
 }
 
 interface AuthContextType extends AuthState {
   setAuth: (token: string, userType: 'customer' | 'provider', user: any) => Promise<void>;
   logout: () => Promise<void>;
+  refreshEmailVerification: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token: null,
     userType: null,
     user: null,
+    isEmailVerified: true, // Default to true to avoid flicker if was verified
   });
 
   useEffect(() => {
@@ -46,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           token,
           userType,
           user,
+          isEmailVerified: auth.currentUser?.emailVerified ?? true,
         });
       } catch (error) {
         console.error('[AuthContext] Failed to load auth state:', error);
@@ -59,8 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = auth.onAuthStateChanged((user: any) => {
       if (user) {
         console.log(`[AuthContext] Firebase Auth User Logged In: ${user.uid}`);
+        setState(s => ({ ...s, isEmailVerified: user.emailVerified }));
       } else {
         console.log('[AuthContext] Firebase Auth User Logged Out');
+        setState(s => ({ ...s, isEmailVerified: false }));
       }
     });
 
@@ -75,16 +81,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userType === 'customer' ? 'customer' : 'provider',
       JSON.stringify(user)
     );
-    setState({ isLoading: false, token, userType, user });
+    setState({ isLoading: false, token, userType, user, isEmailVerified: auth.currentUser?.emailVerified ?? true });
   };
 
   const logout = async () => {
     await signOut(); // This clears SecureStore and signs out of Firebase
-    setState({ isLoading: false, token: null, userType: null, user: null });
+    setState({ isLoading: false, token: null, userType: null, user: null, isEmailVerified: false });
+  };
+
+  const refreshEmailVerification = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      await user.reload();
+      setState(s => ({ ...s, isEmailVerified: user.emailVerified }));
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, setAuth, logout }}>
+    <AuthContext.Provider value={{ ...state, setAuth, logout, refreshEmailVerification }}>
       {children}
     </AuthContext.Provider>
   );

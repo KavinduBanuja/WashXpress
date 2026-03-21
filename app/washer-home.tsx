@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { sendEmailVerification, getAuth } from 'firebase/auth';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -73,17 +74,17 @@ function formatPrice(price: number, currency: string, paidWithSubscription: bool
     return `${currency || 'LKR'} ${(price || 0).toLocaleString()}`;
 }
 
-const CATEGORY_EMOJI: Record<string, string> = {
-    'exterior-wash': '🚿',
-    'interior-clean': '🧹',
-    'tire-cleaning': '⚙️',
-    'full-detail': '✨',
+const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+    'exterior-wash': 'water-outline',
+    'interior-clean': 'sparkles-outline',
+    'tire-cleaning': 'construct-outline',
+    'full-detail': 'star',
 };
 
-const TYPE_ICONS: Record<string, string> = {
-    SUV: '', Van: '', Truck: '',
-    Sedan: '', Hatchback: '', Coupe: '',
-    Convertible: '', Wagon: '',
+const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+    SUV: 'car-outline', Van: 'car-outline', Truck: 'bus-outline',
+    Sedan: 'car-sharp', Hatchback: 'car-outline', Coupe: 'car-outline',
+    Convertible: 'car-outline', Wagon: 'car-outline',
 };
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -91,6 +92,7 @@ export default function WasherHome() {
     const router = useRouter();
     const { user } = useAuth();
     const { data: washerProfile, isLoading: profileLoading } = useProfile();
+    const { isEmailVerified, refreshEmailVerification } = useAuth();
     const { colors, isDark } = useTheme();
     const [activeTab, setActiveTab] = useState('home');
     const [bookings, setBookings] = useState<BookingDoc[]>([]);
@@ -184,7 +186,7 @@ export default function WasherHome() {
                     };
                 });
 
-                console.log(`✅ Successfully mapped ${fetched.length} bookings`);
+                console.log(`Successfully mapped ${fetched.length} bookings`);
 
                 fetched.sort((a, b) => {
                     if (a.scheduledDate !== b.scheduledDate)
@@ -239,7 +241,7 @@ export default function WasherHome() {
         } catch (error: any) {
             const msg = error?.message || '';
             if (msg.toLowerCase().includes('already claimed') || msg.includes('ALREADY_CLAIMED')) {
-                Alert.alert('Too slow! 😅', 'Another washer grabbed this job first.');
+                Alert.alert('Too slow!', 'Another washer grabbed this job first.');
             } else {
                 Alert.alert('Error', msg || 'Failed to accept job');
             }
@@ -316,6 +318,29 @@ export default function WasherHome() {
                     </TouchableOpacity>
                 </View>
 
+                {!isEmailVerified && (
+                  <TouchableOpacity
+                    style={[styles.verifyBanner, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : '#fffbeb' }]}
+                    onPress={async () => {
+                      const user = getAuth().currentUser;
+                      if (user) {
+                        try {
+                          await sendEmailVerification(user);
+                          Alert.alert('Email Sent', 'Verification email resent. Check your inbox.', [
+                            { text: 'OK', onPress: () => refreshEmailVerification() }
+                          ]);
+                        } catch (error: any) {
+                          Alert.alert('Error', error.message || 'Failed to send verification email.');
+                        }
+                      }
+                    }}
+                  >
+                    <Ionicons name="mail-outline" size={16} color="#f59e0b" />
+                    <Text style={styles.verifyBannerTxt}>Tap to verify your email address</Text>
+                    <Ionicons name="chevron-forward" size={14} color="#f59e0b" />
+                  </TouchableOpacity>
+                )}
+
                 {/* ── Stats Grid ── */}
                 <View style={styles.statsGrid}>
                     {[
@@ -338,7 +363,9 @@ export default function WasherHome() {
                     activeOpacity={0.85}
                 >
                     <View style={styles.mentorshipLeft}>
-                        <Text style={{ fontSize: 24 }}>🎓</Text>
+                        <View style={[styles.mentorshipIconCircle, { backgroundColor: isDark ? colors.background : '#eff6ff' }]}>
+                          <Ionicons name="school" size={20} color={colors.accent || '#0ca6e8'} />
+                        </View>
                         <View>
                             <Text style={styles.mentorshipTitle}>Mentorship Program</Text>
                             <Text style={styles.mentorshipSub}>Train and evaluate new washers</Text>
@@ -421,8 +448,8 @@ function JobCard({
     colors: any;
 }) {
     const isAccepting = accepting === booking.id;
-    const vehicleEmoji = TYPE_ICONS[booking.vehicle?.type || ''];
-    const serviceEmoji = CATEGORY_EMOJI[booking.service?.categoryId || ''] || '🚿';
+    const vehicleIcon = TYPE_ICONS[booking.vehicle?.type || ''] || 'car-outline';
+    const serviceIcon = CATEGORY_ICONS[booking.service?.categoryId || ''] || 'water-outline';
     const addressStr = booking.address
         ? `${booking.address.addressLine1}, ${booking.address.city}`
         : 'No address';
@@ -463,7 +490,7 @@ function JobCard({
 
             {/* Service */}
             <View style={[styles.serviceBox, { backgroundColor: `${colors.accent}15` }]}>
-                <Text style={styles.serviceEmoji}>{serviceEmoji}</Text>
+                <Ionicons name={serviceIcon} size={16} color={colors.accent} style={{ marginRight: 6 }} />
                 <Text style={[styles.serviceText, { color: colors.accent }]}>{booking.service?.name || 'Service'}</Text>
             </View>
 
@@ -619,4 +646,24 @@ const styles = StyleSheet.create({
     navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     navLabel: { fontSize: 10, marginTop: 3, fontWeight: '500' },
     navLabelActive: { fontWeight: '600' },
+    mentorshipIconCircle: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    verifyBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginHorizontal: 16,
+      marginTop: 0,
+      marginBottom: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(245,158,11,0.3)',
+      gap: 10,
+    },
+    verifyBannerTxt: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#d97706',
+    },
 });

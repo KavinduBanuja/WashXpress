@@ -54,7 +54,6 @@ export default function RootLayout() {
                 <Stack.Screen name="service-details" />
                 <Stack.Screen name="booking-details" />
                 <Stack.Screen name="checkout-page" options={{ headerShown: false }} />
-                <Stack.Screen name="email-verification" options={{ headerShown: false }} />
                 <Stack.Screen name="subscriptionPaymentScreen" options={{ headerShown: false }} />
                 <Stack.Screen name="washer-inprogress" />
                 <Stack.Screen name="pre-existing-damage-section" options={{ headerShown: false }} />

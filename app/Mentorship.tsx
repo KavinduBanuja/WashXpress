@@ -126,7 +126,7 @@ function AgreementGate({ onAccepted }: { onAccepted: () => void }) {
           {/* Hero */}
           <View style={ag.hero}>
             <View style={ag.heroIconCircle}>
-              <Text style={{ fontSize: 48 }}>🎓</Text>
+              <Ionicons name="school" size={48} color={colors.accent} />
             </View>
             <Text style={ag.heroTitle}>Become a Mentor</Text>
             <Text style={ag.heroSub}>
@@ -138,13 +138,15 @@ function AgreementGate({ onAccepted }: { onAccepted: () => void }) {
           <View style={ag.card}>
             <Text style={ag.cardTitle}>Why become a mentor?</Text>
             {[
-              { icon: '⭐', text: 'Earn extra recognition and mentor badges on your profile' },
-              { icon: '💰', text: 'Priority job matching for active mentors' },
-              { icon: '🏆', text: 'Exclusive mentor tier with higher earnings potential' },
-              { icon: '🤝', text: 'Build your professional reputation in the community' },
+              { icon: 'star-outline' as const, text: 'Earn extra recognition and mentor badges on your profile', color: '#facc15' },
+              { icon: 'cash-outline' as const, text: 'Priority job matching for active mentors', color: '#4ade80' },
+              { icon: 'trophy-outline' as const, text: 'Exclusive mentor tier with higher earnings potential', color: '#f59e0b' },
+              { icon: 'people-outline' as const, text: 'Build your professional reputation in the community', color: '#2563eb' },
             ].map((b, i) => (
               <View key={i} style={ag.benefitRow}>
-                <Text style={{ fontSize: 20, width: 28 }}>{b.icon}</Text>
+                <View style={{ width: 28, alignItems: 'center' }}>
+                  <Ionicons name={b.icon} size={20} color={b.color} />
+                </View>
                 <Text style={ag.benefitText}>{b.text}</Text>
               </View>
             ))}
@@ -370,7 +372,9 @@ export default function MentorshipScreen() {
 
           {/* Mentor badge */}
           <View style={s.mentorBadge}>
-            <Text style={{ fontSize: 28 }}>🎓</Text>
+            <View style={s.mentorBadgeIcon}>
+              <Ionicons name="school" size={28} color={colors.accent} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={s.mentorBadgeTitle}>Active Mentor</Text>
               <Text style={s.mentorBadgeSub}>You are part of the WashXpress Mentorship Program</Text>
@@ -380,7 +384,7 @@ export default function MentorshipScreen() {
 
           {trainees.length === 0 && (
             <View style={s.emptyCard}>
-              <Text style={{ fontSize: 36, marginBottom: 10 }}>👤</Text>
+              <Ionicons name="person-outline" size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
               <Text style={s.emptyTitle}>No trainees assigned yet</Text>
               <Text style={s.emptySub}>The admin will assign trainees to you soon.</Text>
             </View>
@@ -524,7 +528,7 @@ export default function MentorshipScreen() {
       <Modal visible={completionModal.visible} transparent animationType="fade" onRequestClose={() => setCompletionModal(m => ({ ...m, visible: false }))}>
         <View style={s.modalOverlay}>
           <View style={s.modalBox}>
-            <Text style={{ fontSize: 48, textAlign: 'center' }}>🎉</Text>
+            <Ionicons name="sparkles" size={48} color="#facc15" style={{ marginBottom: 12 }} />
             <Text style={s.modalTitle}>{completionModal.traineeName} completed all sessions!</Text>
             <Text style={s.modalSub}>The admin team will review their certification.</Text>
             <TouchableOpacity style={s.modalBtn} onPress={() => setCompletionModal(m => ({ ...m, visible: false }))}>
@@ -579,6 +583,7 @@ const getMentorshipStyles = (colors: any, isDark: boolean) => StyleSheet.create(
   errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.errorLight, borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.error },
   errorText: { flex: 1, fontSize: 13, color: colors.error },
   mentorBadge: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.accentLight, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.divider },
+  mentorBadgeIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center' },
   mentorBadgeTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   mentorBadgeSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   mentorDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.success },

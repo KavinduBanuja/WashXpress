@@ -33,11 +33,11 @@ interface Booking {
 // ─── Constants ────────────────────────────────────────────────────────────────
 // STATUS_CONFIG is now moved inside the component to use theme colors
 
-const CATEGORY_EMOJI: Record<string, string> = {
-    'exterior-wash': '🚿',
-    'interior-clean': '🧹',
-    'tire-cleaning': '⚙️',
-    'full-detail': '✨',
+const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+    'exterior-wash': 'water-outline',
+    'interior-clean': 'sparkles-outline',
+    'tire-cleaning': 'construct-outline',
+    'full-detail': 'star',
 };
 
 function formatDate(dateStr: string) {
@@ -193,7 +193,7 @@ export default function BookingListScreen() {
 // ─── Booking Card ─────────────────────────────────────────────────────────────
 function BookingCard({ booking, colors, isDark, statusConfig }: { booking: Booking; colors: any; isDark: boolean; statusConfig: any }) {
     const cfg = statusConfig[booking.status] || statusConfig.pending;
-    const emoji = CATEGORY_EMOJI[booking.service?.categoryId] || '�';
+    const icon = CATEGORY_ICONS[booking.service?.categoryId] || 'car-outline';
     const isPending = booking.status === 'pending';
     const isInProgress = booking.status === 'in_progress';
 
@@ -208,7 +208,7 @@ function BookingCard({ booking, colors, isDark, statusConfig }: { booking: Booki
             {/* Top */}
             <View style={s.cardTop}>
                 <View style={[s.serviceIconCircle, { backgroundColor: cfg.bg }]}>
-                    <Text style={s.serviceEmoji}>{emoji}</Text>
+                    <Ionicons name={icon} size={26} color={cfg.color} />
                     {isInProgress && <View style={[s.inProgressDot, { borderColor: colors.cardBackground }]} />}
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>

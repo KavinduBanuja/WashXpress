@@ -157,13 +157,13 @@ export default function SubscriptionCheckoutScreen() {
 
           {/* Allowances */}
           <View style={[s.allowanceGrid, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
-            <AllowanceChip icon="🚿" label="Washes" count={selectedPlan.allowances?.washes ?? 0} colors={colors} />
-            <AllowanceChip icon="🧹" label="Interior" count={selectedPlan.allowances?.interiorCleans ?? 0} colors={colors} />
+            <AllowanceChip icon="water-outline" label="Washes" count={selectedPlan.allowances?.washes ?? 0} colors={colors} />
+            <AllowanceChip icon="sparkles-outline" label="Interior" count={selectedPlan.allowances?.interiorCleans ?? 0} colors={colors} />
             {(selectedPlan.allowances?.tireCleans ?? 0) > 0 && (
-              <AllowanceChip icon="⚙️" label="Tires" count={selectedPlan.allowances?.tireCleans} colors={colors} />
+              <AllowanceChip icon="construct-outline" label="Tires" count={selectedPlan.allowances?.tireCleans} colors={colors} />
             )}
             {(selectedPlan.allowances?.fullDetails ?? 0) > 0 && (
-              <AllowanceChip icon="✨" label="Full Detail" count={selectedPlan.allowances?.fullDetails} colors={colors} />
+              <AllowanceChip icon="star-outline" label="Full Detail" count={selectedPlan.allowances?.fullDetails} colors={colors} />
             )}
           </View>
         </View>
@@ -247,10 +247,10 @@ export default function SubscriptionCheckoutScreen() {
   );
 }
 
-function AllowanceChip({ icon, label, count, colors }: { icon: string; label: string; count: number; colors: any }) {
+function AllowanceChip({ icon, label, count, colors }: { icon: keyof typeof Ionicons.glyphMap; label: string; count: number; colors: any }) {
   return (
     <View style={[s.allowanceChip, { backgroundColor: colors.background }]}>
-      <Text style={s.allowanceChipIcon}>{icon}</Text>
+      <Ionicons name={icon} size={20} color={colors.accent} style={{ marginBottom: 4 }} />
       <Text style={[s.allowanceChipCount, { color: colors.textPrimary }]}>{count}x</Text>
       <Text style={[s.allowanceChipLabel, { color: colors.textSecondary }]}>{label}</Text>
     </View>
@@ -280,8 +280,7 @@ const s = StyleSheet.create({
   summaryValue: { fontSize: 14, fontWeight: '600', textAlign: 'right', flex: 1, marginLeft: 16 },
 
   allowanceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderRadius: 12, borderWidth: 1, padding: 12, marginTop: 8 },
-  allowanceChip: { alignItems: 'center', borderRadius: 10, padding: 10, minWidth: 70 },
-  allowanceChipIcon: { fontSize: 20, marginBottom: 4 },
+  allowanceChip: { alignItems: 'center', borderRadius: 10, padding: 10, minWidth: 70, gap: 2 },
   allowanceChipCount: { fontSize: 16, fontWeight: '800' },
   allowanceChipLabel: { fontSize: 11, marginTop: 2 },
 

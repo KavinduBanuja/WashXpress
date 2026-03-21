@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { sendEmailVerification } from 'firebase/auth';
+import { auth as firebaseAuth } from '../firebaseConfig';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -79,7 +81,7 @@ export default function WasherSignupScreen() {
   };
 
   // ── Final Submit ────────────────────────────────────────────────────────
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     if (!isStep3Valid) {
       Alert.alert('Error', 'Please select at least one service area');
       return;
@@ -121,30 +123,20 @@ const handleSubmit = async () => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Send verification email (non-fatal)
-      try {
-        await fetch(`${PROVIDER_API_URL}/auth/send-verification-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-      } catch (e) {
-        console.warn('Failed to send verification email (non-fatal):', e);
-      }
-
-      // Navigate to email verification screen
-      // Washer nextRoute is /login since they need admin approval before accessing the app
-      router.replace({
-        pathname: '/email-verification',
-        params: {
-          email,
-          userType: 'provider',
-          nextRoute: '/login',
-        },
-      } as any);
+      // Registration succeeded — show success alert and go to login
+      // Firebase will send verification email when washer logs in
+      Alert.alert(
+        'Application Submitted!',
+        hasExperience
+          ? 'Your professional experience is under review by our admin team. You will be notified once approved.'
+          : certificationPath === 'field_certification'
+            ? 'You will be assigned mentors for field certification. Complete 6 evaluations to get certified.'
+            : 'You will be assigned to a training center. Our team will contact you shortly.',
+        [{ text: 'Back to Login', onPress: () => router.replace('/login' as any) }]
+      );
 
     } catch (error: any) {
-      console.error('❌ Washer signup error:', error);
+      console.error('Washer signup error:', error);
       Alert.alert('Registration Failed', error.message || 'Failed to register. Please try again.');
     } finally {
       setLoading(false);
@@ -282,7 +274,7 @@ const handleSubmit = async () => {
                 <View style={s.experienceToggle}>
                   <TouchableOpacity
                     style={[
-                      s.experienceOption, 
+                      s.experienceOption,
                       { borderColor: colors.border, backgroundColor: colors.cardBackground },
                       hasExperience === true && [s.experienceOptionActive, { borderColor: colors.success || '#16a34a', backgroundColor: isDark ? 'rgba(22, 163, 74, 0.1)' : '#f0fdf4' }]
                     ]}
@@ -299,7 +291,7 @@ const handleSubmit = async () => {
 
                   <TouchableOpacity
                     style={[
-                      s.experienceOption, 
+                      s.experienceOption,
                       { borderColor: colors.border, backgroundColor: colors.cardBackground },
                       hasExperience === false && [s.experienceOptionActiveRed, { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(12, 166, 232, 0.1)' : '#eff6ff' }]
                     ]}
@@ -375,7 +367,7 @@ const handleSubmit = async () => {
 
                   <TouchableOpacity
                     style={[
-                      s.certCard, 
+                      s.certCard,
                       { borderColor: colors.border, backgroundColor: colors.background },
                       certificationPath === 'field_certification' && [s.certCardActive, { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(12, 166, 232, 0.1)' : '#eff6ff' }]
                     ]}
@@ -407,7 +399,7 @@ const handleSubmit = async () => {
 
                   <TouchableOpacity
                     style={[
-                      s.certCard, 
+                      s.certCard,
                       { borderColor: colors.border, backgroundColor: colors.background },
                       certificationPath === 'training_center' && [s.certCardActive, { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(12, 166, 232, 0.1)' : '#eff6ff' }]
                     ]}
@@ -465,7 +457,7 @@ const handleSubmit = async () => {
                     <TouchableOpacity
                       key={area}
                       style={[
-                        s.areaChip, 
+                        s.areaChip,
                         { borderColor: colors.border, backgroundColor: colors.cardBackground },
                         selected && [s.areaChipActive, { backgroundColor: colors.accent, borderColor: colors.accent }]
                       ]}
