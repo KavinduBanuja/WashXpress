@@ -55,8 +55,8 @@ function formatDate(d: string) {
 }
 
 const VEHICLE_TYPE_ICONS: Record<string, string> = {
-    SUV: '🚙', Van: '🚐', Truck: '🛻',
-    Sedan: '🚗', Hatchback: '🚗', Coupe: '🚗', Convertible: '🚗', Wagon: '🚗',
+    SUV: '', Van: '', Truck: '',
+    Sedan: '', Hatchback: '', Coupe: '', Convertible: '', Wagon: '',
 };
 
 export default function WasherInProgressScreen() {
@@ -187,7 +187,7 @@ export default function WasherInProgressScreen() {
         <View style={[s.center, { backgroundColor: colors.background }]}><Text style={{ color: colors.error }}>Booking not found</Text></View>
     );
 
-    const vehicleIcon = VEHICLE_TYPE_ICONS[booking.vehicle.type] || '🚗';
+    const vehicleIcon = VEHICLE_TYPE_ICONS[booking.vehicle.type];
     const hasSpecialNotes = !!booking.notes?.trim();
     const timeChanged = booking.washerPreferredTime && booking.washerPreferredTime !== booking.scheduledTime;
 
@@ -254,7 +254,7 @@ export default function WasherInProgressScreen() {
                     <CardTitle icon="car-sport" title="Vehicle" colors={colors} />
 
                     <View style={s.vehicleRow}>
-                        <Text style={s.vehicleEmoji}>{vehicleIcon}</Text>
+                        <Ionicons name="car-outline" size={18} color={colors.textSecondary} />
                         <View style={{ flex: 1, marginLeft: 14 }}>
                             <Text style={[s.vehicleName, { color: colors.textPrimary }]}>{booking.vehicle.nickname || `${booking.vehicle.make} ${booking.vehicle.model}`}</Text>
                             <Text style={[s.vehicleDetails, { color: colors.textSecondary }]}>{booking.vehicle.make} {booking.vehicle.model} · {booking.vehicle.year} · {booking.vehicle.color}</Text>
