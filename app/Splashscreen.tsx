@@ -13,7 +13,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
   return (
     <View style={styles.container}>
       <Image 
-        source={require('../assets/icons/icon_copy.svg')} 
+        source={require('../assets/icons/message.svg')} 
         style={styles.logo} 
         resizeMode="contain" 
       />
